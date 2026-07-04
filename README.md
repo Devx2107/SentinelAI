@@ -1,239 +1,157 @@
-# SentinelAI - AI Powered Smart Home Operating System
+# SentinelAI — AI-Powered IoT Operating System
 
 ## 🏠 Overview
 
-**SentinelAI** is a modular AI-powered smart home operating system built using Raspberry Pi, Arduino, IoT sensors, and computer vision.
+**SentinelAI** is a modular, distributed IoT operating system for home security, safety, environmental monitoring, and automation — built on a Raspberry Pi 4 hub, Raspberry Pi Zero W edge nodes, and an Arduino Uno peripheral.
 
-Instead of creating isolated sensor demonstrations, SentinelAI combines multiple security, safety, environmental monitoring, and automation modules into a single intelligent platform capable of monitoring an entire home in real time.
-
-The project is designed to be scalable, allowing additional hardware modules and AI capabilities to be integrated over time while maintaining a unified dashboard and event logging system.
+Rather than a collection of isolated sensor scripts, SentinelAI is architected as an actual **hub/node system**: a central hub runs core OS services (device registry, event bus, database, dashboard) while lightweight nodes report sensor data over MQTT. New capabilities plug in as self-contained modules without touching the core.
 
 ---
 
 ## 🎯 Vision
 
-Modern smart homes often require multiple disconnected devices for security, automation, environmental monitoring, and remote access.
-
-SentinelAI aims to unify these systems into one extensible platform capable of:
-
-* Home Security
-* Environmental Monitoring
-* Hazard Detection
-* AI-based Vision
-* Remote Monitoring
-* Home Automation
-* Analytics & Logging
+* Home Security (motion, entry monitoring, AI person detection, RFID auth)
+* Safety (gas, fire, smoke detection)
+* Environmental Monitoring (temperature, humidity)
+* Home Automation (irrigation, water tank monitoring)
+* Remote Monitoring & Notifications
+* A unified dashboard and event log across all of the above
 
 ---
 
-## ✨ Features
+## 🏗️ Architecture
 
-### 🔒 Security
-
-* Door & Window Monitoring
-* Motion Detection
-* AI Person Detection
-* Face Recognition *(Planned)*
-* RFID Authentication *(Planned)*
-* Intruder Alerts
-
-### 🔥 Safety
-
-* Gas Leak Detection
-* Fire Detection
-* Smoke Monitoring
-* Alarm System
-
-### 🌍 Environment
-
-* Temperature Monitoring
-* Humidity Monitoring
-* Ambient Light Detection
-* Rain Detection
-
-### 🌱 Automation
-
-* Smart Irrigation
-* Water Tank Monitoring
-* Automatic Pump Control
-* Smart Lighting
-
-### 📊 Dashboard
-
-* Live Sensor Status
-* Event Timeline
-* Camera Feed
-* Historical Logs
-* System Health
-* Device Monitoring
-
-### 🌐 Remote Access
-
-* Tailscale Integration
-* Telegram Notifications
-* Live Monitoring
-* Secure Remote Dashboard
-
----
-
-# 🏗️ Project Architecture
+SentinelAI is a **hub/node distributed system**, not a single monolithic script:
 
 ```
-                        SentinelAI Dashboard
-                               │
-                Flask + SQLite + REST API
-                               │
-                     Raspberry Pi 4 (Brain)
-                               │
-      ┌──────────────┬──────────────┬──────────────┐
-      │              │              │
-   AI Camera      Arduino Hub     Notifications
-      │              │              │
-      │              │          Telegram
-      │              │
-      │      All Sensor Modules
-      │
-      ├── Security
-      ├── Environment
-      ├── Safety
-      └── Automation
+                        ┌─────────────────────────────┐
+                        │   RPi 4 — SentinelAI Hub     │
+                        │  ┌────────────────────────┐  │
+                        │  │ MQTT Broker (mosquitto)│  │
+                        │  ├────────────────────────┤  │
+                        │  │ Core OS Services:      │  │
+                        │  │  - Device Registry     │  │
+                        │  │  - Database (SQLite)   │  │
+                        │  │  - Dashboard (Flask)   │  │
+                        │  ├────────────────────────┤  │
+                        │  │ Modules (pluggable):   │  │
+                        │  │  - entry_monitor       │  │
+                        │  │  - (future modules)    │  │
+                        │  └────────────────────────┘  │
+                        └───────────┬──────────────────┘
+                              MQTT (WiFi/LAN)
+                  ┌──────────────────┼──────────────────┐
+          ┌───────▼────────┐  ┌──────▼───────┐   ┌──────▼──────┐
+          │ RPi 0 W Node 1  │  │ RPi 0 W Node 2│   │ Arduino Uno │
+          │ (future)        │  │ (future)      │   │ (future)    │
+          └─────────────────┘  └───────────────┘   └─────────────┘
 ```
 
----
+**Core design principles:**
 
-# 📦 Modules
-
-## Phase 1 — Smart Door Monitoring 🚧
-
-Status: **In Development**
-
-Features
-
-* Door Open Detection
-* Door Close Detection
-* Timestamp Logging
-* Alarm Trigger
-* Dashboard Integration
-* Event History
-
-Hardware
-
-* Raspberry Pi
-* MC-38 Magnetic Door Sensor
-* LED
-* Active Buzzer
+- **Hub/node topology** — the hub doesn't hardcode what sensors exist where; nodes register their own capabilities.
+- **MQTT transport** from day one, even while everything runs on a single board — this is the actual protocol production IoT platforms use, and it means adding a real second node later is a config change, not a rewrite.
+- **Pluggable modules** — every capability (entry monitoring, motion, RFID, environment) implements a common `BaseModule` interface. The module loader starts whatever's registered; core code never needs to change to add a new capability.
+- **Sensor abstraction** — every physical sensor driver implements a common `BaseSensor` interface, so swapping or adding hardware never touches business logic.
 
 ---
 
-## Future Modules
+## 📦 Modules
 
-### Phase 2
+### Phase 1 — Entry Monitoring (PIR + AI Person Detection) 🚧
 
-Motion Detection
+**Status:** In development
 
-### Phase 3
+PIR-triggered, camera-confirmed entry monitoring — motion alone doesn't fire an alert; a Pi Camera frame is run through an on-device person-detection model to confirm before logging a high-severity event. This reduces false positives from pets, shadows, or environmental noise.
 
-Camera + AI Person Detection
+**Flow:**
+```
+PIR motion detected
+  → Pi Camera captures frames
+  → TFLite MobileNet-SSD checks for a person
+  → Event logged (person_confirmed / motion_no_person)
+  → Published over MQTT
+```
 
-### Phase 4
+**Hardware (Phase 1):**
+- Raspberry Pi 4
+- PIR Motion Sensor
+- Raspberry Pi Camera Module
 
-Gas & Fire Detection
+**Software:**
+- Python, Flask, SQLite
+- MQTT (mosquitto + paho-mqtt)
+- TensorFlow Lite + MobileNet-SSD (quantized, COCO-trained)
+- GPIO Zero, picamera2
 
-### Phase 5
+### Future Modules
 
-Environmental Monitoring
-
-### Phase 6
-
-Smart Irrigation
-
-### Phase 7
-
-Central Dashboard
-
-### Phase 8
-
-Remote Monitoring & Notifications
-
----
-
-# 🛠️ Tech Stack
-
-## Hardware
-
-* Raspberry Pi 4
-* Raspberry Pi Camera
-* Arduino Uno
-* PIR Sensor
-* MC-38 Magnetic Switch
-* MQ-2 Gas Sensor
-* Flame Sensor
-* DHT11
-* Soil Moisture Sensor
-* Rain Sensor
-* Water Level Sensor
-* RFID Module
-* OLED Display
-* LCD Display
-* Relay Module
-* Servo Motor
+- Motion monitoring on RPi 0 W edge nodes (proves the distributed hub/node architecture with real hardware)
+- RFID authentication (RC522 module)
+- Environmental monitoring (DHT11 — temperature & humidity)
+- Water tank / level monitoring
+- Gas & fire detection
+- Central dashboard (live status, event timeline, analytics)
+- Remote monitoring (Telegram alerts, Tailscale)
 
 ---
 
-## Software
+## 🛠️ Tech Stack
 
-* Python
-* Flask
-* SQLite
-* OpenCV
-* YOLOv8 *(Planned)*
-* GPIO Zero
-* HTML
-* CSS
-* JavaScript
-* Tailscale
+**Hardware currently available:**
+- Raspberry Pi 4 (hub)
+- 2x Raspberry Pi Zero W (future edge nodes)
+- Arduino Uno (future peripheral)
+- Raspberry Pi Camera Module
+- PIR Motion Sensor, Ultrasonic Sensor, Tilt Switch
+- RC522 RFID Module
+- DHT11 Temperature/Humidity Sensor
+- Water Level Sensor, Sound Sensor
+- MPU6050, 5V Relay, Servo/Stepper motors, LCD/7-segment displays
+- (Full parts inventory tracked separately — see `/docs`)
+
+**Software:**
+- Python, Flask, SQLite
+- MQTT (mosquitto broker, paho-mqtt client)
+- TensorFlow Lite (tflite-runtime), OpenCV, picamera2
+- GPIO Zero
+- HTML, CSS, JavaScript (dashboard, once backend is proven)
 
 ---
 
-# 📂 Repository Structure
+## 📂 Repository Structure
 
 ```
 SentinelAI/
-
-├── docs/
-├── hardware/
-├── firmware/
-├── dashboard/
-├── database/
-├── ai/
-├── sensors/
-├── notifications/
-├── logs/
-├── static/
-├── templates/
+├── hub/                          # Runs on the RPi 4
+│   ├── app.py                     # Entrypoint — wires DB, MQTT, modules, Flask
+│   ├── config.py                   # All configuration in one place
+│   ├── core/
+│   │   ├── mqtt_client.py           # MQTT wrapper (LWT, pub/sub)
+│   │   ├── device_registry.py        # Tracks online nodes + capabilities
+│   │   └── module_loader.py           # Starts/stops all registered modules
+│   ├── modules/                    # Pluggable capabilities
+│   │   ├── base_module.py            # Interface every module implements
+│   │   └── entry_monitor/             # Phase 1: PIR + camera + person detection
+│   ├── database/                    # SQLite models (events, devices)
+│   ├── routes/                      # Dashboard/API routes (Phase 2+)
+│   ├── templates/, static/           # Dashboard UI (Phase 2+)
+│   └── tests/
+├── shared/                        # Code shared between hub and future node agents
+│   ├── base_sensor.py               # Interface every sensor driver implements
+│   ├── mqtt_topics.py                 # Single source of truth for topic naming
+│   └── schemas.py                      # MQTT message payload formats
+├── docker-compose.yml              # Runs the mosquitto broker
+├── mosquitto/                      # Broker config
 ├── README.md
 └── LICENSE
 ```
 
 ---
 
-# 🎯 Long-Term Goals
-
-* AI-based Occupancy Detection
-* Intelligent Intruder Classification
-* Face Recognition
-* Smart Energy Monitoring
-* Predictive Analytics
-* Mobile Dashboard
-* Voice Assistant Integration
-* MQTT Support
-* Home Assistant Integration
-
----
-
 # 🤝 Contributing
 
-SentinelAI is being developed incrementally through modular phases. Contributions, suggestions, and feature requests are always welcome.
+SentinelAI is being developed incrementally, module by module, with hardware brought online one phase at a time. Contributions, suggestions, and feature requests are welcome.
 
 ---
 
