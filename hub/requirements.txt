@@ -1,0 +1,19 @@
+# --- Core web/backend ---
+flask==3.0.3
+
+# --- MQTT ---
+paho-mqtt==1.6.1
+
+# --- GPIO (Raspberry Pi only — will fail to install on non-Pi dev machines) ---
+gpiozero==2.0.1
+
+# --- Camera (Raspberry Pi only) ---
+picamera2==0.3.20
+
+# --- Vision / TFLite person detection ---
+tflite-runtime==2.14.0
+numpy==1.26.4
+opencv-python-headless==4.10.0.84
+
+# --- Testing ---
+pytest==8.2.2

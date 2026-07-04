@@ -1,0 +1,18 @@
+# Runs the MQTT broker SentinelAI's hub depends on.
+# The hub itself runs directly on the RPi 4 (needs GPIO/camera access,
+# which is awkward inside Docker), but the broker is a perfect fit for
+# a container since it has no hardware dependencies.
+#
+# Usage: docker compose up -d
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: sentinelai-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
