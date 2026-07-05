@@ -84,7 +84,21 @@ PIR motion detected
 - TensorFlow Lite + MobileNet-SSD (quantized, COCO-trained)
 - GPIO Zero, picamera2
 
-### Future Modules
+### Planned — Face Recognition (`face_auth`) 📋
+
+**Status:** Planned, not yet started. Deferred until `entry_monitor` is validated on real hardware.
+
+Extends identity confirmation beyond "is this a person" (Phase 1) to "who is this person." Enrolled/known individuals are recognized by face; unrecognized faces are logged distinctly from known ones.
+
+**Design (subject to change once benchmarked on real hardware):**
+
+- **Enrollment:** capture reference photo(s) per known person, compute a face embedding, store it locally (new `known_persons` table — name, embedding, date added).
+- **Runtime matching:** on a detected face, compute its embedding and compare against all stored embeddings (distance-based match with a confidence threshold) to decide known vs. unknown.
+- **Model choice:** staying in the TFLite ecosystem already used for person detection (e.g. a TFLite-exported MobileFaceNet) rather than introducing `dlib`/`face_recognition`, which is notably slow on an unaccelerated RPi 4 CPU. To be benchmarked against actual latency before committing.
+- **Relationship to other modules:** conceptually alongside `entry_monitor` and the future `rfid_auth` — all three answer "who is this / are they authorized," and may eventually share a common "authorized identity" concept (recognized by face OR RFID card).
+- **Sequencing:** built as its own module (`face_auth`) rather than bolted onto `entry_monitor`, so a bug in face recognition can never break basic motion/person detection.
+
+### Other Future Modules
 
 - Motion monitoring on RPi 0 W edge nodes (proves the distributed hub/node architecture with real hardware)
 - RFID authentication (RC522 module)
