@@ -1,6 +1,6 @@
 """TFLite MobileNet-SSD person detector.
 
-Loads a quantized MobileNet-SSD (COCO-trained) model via tflite-runtime
+Loads a quantized MobileNet-SSD (COCO-trained) model via ai-edge-litert
 and exposes a single `detect_person(frame)` method used by the
 entry_monitor module. Kept deliberately narrow — this only answers
 "is there a person in this frame, and with what confidence", not
@@ -13,7 +13,7 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
-from tflite_runtime.interpreter import Interpreter
+from ai_edge_litert.interpreter import Interpreter
 
 from config import config
 

@@ -113,7 +113,7 @@ PIR motion detected
 **Software:**
 - Python, Flask, SQLite
 - MQTT (mosquitto broker, paho-mqtt client)
-- TensorFlow Lite (tflite-runtime), OpenCV, picamera2
+- TensorFlow Lite (ai-edge-litert), OpenCV, picamera2
 - GPIO Zero
 - HTML, CSS, JavaScript (dashboard, once backend is proven)
 
