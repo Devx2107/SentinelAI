@@ -1,0 +1,2 @@
+"""SentinelAI node agent package."""
+
