@@ -8,16 +8,24 @@ Startup sequence:
     5. Serve a minimal Flask app (health check only for now —
        dashboard routes/templates come once this pipeline is proven)
 
-Run with: python app.py
+Run with: python app.py (from either the repo root or hub/ — see note below).
 """
 
 from __future__ import annotations
 
 import logging
+import os
 import signal
 import sys
 from types import FrameType
 from typing import Optional
+
+# shared/ lives at the repo root, as a sibling of hub/, not inside it.
+# Python auto-adds this script's own directory (hub/) to sys.path, which
+# is enough for `core`/`config`/`modules` imports below, but not enough
+# to resolve `shared.*` imports used deeper in core/ and modules/. Add
+# the repo root explicitly so this works regardless of the caller's cwd.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from flask import Flask, jsonify
 
