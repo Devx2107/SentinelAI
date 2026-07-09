@@ -81,12 +81,22 @@ class NodeConfig:
 
 
 @dataclass(frozen=True)
+class RFIDConfig:
+    """RFID authentication settings."""
+
+    auth_window_seconds: float = float(
+        os.getenv("SENTINELAI_RFID_AUTH_WINDOW_SECONDS", "30")
+    )
+
+
+@dataclass(frozen=True)
 class Config:
     gpio: GPIOConfig = field(default_factory=GPIOConfig)
     mqtt: MQTTConfig = field(default_factory=MQTTConfig)
     database: DatabaseConfig = field(default_factory=DatabaseConfig)
     vision: VisionConfig = field(default_factory=VisionConfig)
     node: NodeConfig = field(default_factory=NodeConfig)
+    rfid: RFIDConfig = field(default_factory=RFIDConfig)
 
 
 config = Config()

@@ -12,13 +12,12 @@ from __future__ import annotations
 import logging
 import time
 from datetime import datetime, timezone
+from typing import Optional
 
 from config import config
+from core.auth_state import RfidAuthState
 from database.models.event import Event, create_event
 from modules.base_module import BaseModule
-from modules.entry_monitor.sensors.pir_sensor import CLEAR, MOTION, PIRSensor
-from modules.entry_monitor.vision.detector import PersonDetector
-from modules.entry_monitor.vision.frame_capture import FrameCapture
 from shared.mqtt_topics import sensor_state_topic
 from shared.schemas import SensorStatePayload
 
@@ -36,37 +35,105 @@ class EntryMonitorModule(BaseModule):
 
     module_id = MODULE_ID
 
-    def __init__(self, mqtt_client) -> None:
+    def __init__(
+        self,
+        mqtt_client,
+        auth_state: Optional[RfidAuthState] = None,
+        pir=None,
+        camera=None,
+        detector=None,
+    ) -> None:
         self._mqtt_client = mqtt_client
-        self._pir = PIRSensor(sensor_id=SENSOR_ID, pin=config.gpio.pir_pin)
-        self._camera = FrameCapture(resolution=config.vision.capture_resolution)
-        self._detector = PersonDetector()
+        self._auth_state = auth_state
+        self._pir = pir
+        self._camera = camera
+        self._detector = detector
+
+        if self._pir is None:
+            try:
+                from modules.entry_monitor.sensors.pir_sensor import PIRSensor
+            except ModuleNotFoundError as exc:
+                logger.warning(
+                    "Skipping PIR setup because a hardware dependency is unavailable: %s",
+                    exc,
+                )
+            else:
+                self._pir = PIRSensor(sensor_id=SENSOR_ID, pin=config.gpio.pir_pin)
+
+        if self._camera is None:
+            try:
+                from modules.entry_monitor.vision.frame_capture import FrameCapture
+            except ModuleNotFoundError as exc:
+                logger.warning(
+                    "Skipping camera setup because a hardware dependency is unavailable: %s",
+                    exc,
+                )
+            else:
+                self._camera = FrameCapture(resolution=config.vision.capture_resolution)
+
+        if self._detector is None:
+            try:
+                from modules.entry_monitor.vision.detector import PersonDetector
+            except ModuleNotFoundError as exc:
+                logger.warning(
+                    "Skipping vision detector setup because a hardware dependency is unavailable: %s",
+                    exc,
+                )
+            else:
+                self._detector = PersonDetector()
 
     def start(self) -> None:
+        if self._pir is None or self._camera is None or self._detector is None:
+            logger.info(
+                "Entry monitor module started in degraded mode; hardware dependencies are unavailable."
+            )
+            return
+
         self._pir.on_change(self._on_pir_change)
         self._camera.start()
         logger.info("Entry monitor module started (PIR on GPIO %s)", config.gpio.pir_pin)
 
     def stop(self) -> None:
-        self._pir.close()
-        self._camera.stop()
+        if self._pir is not None:
+            self._pir.close()
+        if self._camera is not None:
+            self._camera.stop()
         logger.info("Entry monitor module stopped")
 
     def _on_pir_change(self, state: str) -> None:
+        try:
+            from modules.entry_monitor.sensors.pir_sensor import MOTION
+        except ModuleNotFoundError:
+            MOTION = "motion"
+
         if state != MOTION:
             return  # Only act on motion trigger, not the "clear" transition.
 
-        logger.info("PIR triggered — capturing frames for person confirmation")
+        logger.info("PIR triggered - capturing frames for person confirmation")
         confirmed, confidence = self._confirm_person()
+        auth_active = self._auth_state is not None and self._auth_state.is_authorized()
 
         if confirmed:
-            status = STATUS_PERSON_CONFIRMED
-            severity = "warning"
-            message = f"Person confirmed at entry (confidence {confidence:.0%})"
+            if auth_active:
+                status = "person_confirmed_authenticated"
+                severity = "info"
+                message = (
+                    f"Person confirmed at entry while RFID auth is active "
+                    f"(confidence {confidence:.0%})"
+                )
+            else:
+                status = STATUS_PERSON_CONFIRMED
+                severity = "warning"
+                message = f"Person confirmed at entry (confidence {confidence:.0%})"
         else:
-            status = STATUS_MOTION_NO_PERSON
-            severity = "info"
-            message = "Motion detected but no person confirmed by camera"
+            if auth_active:
+                status = "motion_authenticated"
+                severity = "info"
+                message = "Motion detected while RFID auth is active; alert suppressed"
+            else:
+                status = STATUS_MOTION_NO_PERSON
+                severity = "info"
+                message = "Motion detected but no person confirmed by camera"
 
         self._log_event(status=status, severity=severity, message=message, confidence=confidence)
         self._publish_state(status=status, confidence=confidence)
@@ -112,3 +179,4 @@ class EntryMonitorModule(BaseModule):
         )
         topic = sensor_state_topic(config.node.node_id, SENSOR_ID)
         self._mqtt_client.publish(topic, payload.to_json())
+

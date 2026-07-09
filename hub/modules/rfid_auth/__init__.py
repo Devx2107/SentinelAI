@@ -1,0 +1,2 @@
+"""RFID authentication module."""
+
