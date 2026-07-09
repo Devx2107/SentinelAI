@@ -12,8 +12,6 @@ from __future__ import annotations
 import logging
 from typing import Callable, Optional
 
-import paho.mqtt.client as mqtt
-
 from config import config
 from shared.mqtt_topics import status_topic
 
@@ -21,15 +19,29 @@ logger = logging.getLogger(__name__)
 
 MessageCallback = Callable[[str, str], None]  # (topic, payload) -> None
 
+try:
+    import paho.mqtt.client as mqtt
+except ModuleNotFoundError:  # pragma: no cover - exercised in non-Pi dev setups
+    mqtt = None
+
 
 class MQTTClient:
     """Thin wrapper around paho-mqtt for hub-side pub/sub."""
 
     def __init__(self) -> None:
+        self._subscriptions: dict[str, MessageCallback] = {}
+        self._enabled = mqtt is not None
+
+        if not self._enabled:
+            logger.warning(
+                "paho-mqtt is not installed; MQTT is disabled and the hub will run in dashboard-only mode."
+            )
+            self._client = None
+            return
+
         self._client = mqtt.Client(client_id=config.mqtt.client_id)
         self._client.on_connect = self._on_connect
         self._client.on_disconnect = self._on_disconnect
-        self._subscriptions: dict[str, MessageCallback] = {}
 
         # LWT: if this client disconnects uncleanly, the broker will
         # publish "offline" on our behalf, retained so late subscribers
@@ -40,6 +52,10 @@ class MQTTClient:
 
     def connect(self) -> None:
         """Connect to the configured broker and start the network loop thread."""
+        if not self._enabled:
+            logger.info("MQTT disabled; skipping broker connection.")
+            return
+
         self._client.connect(
             config.mqtt.broker_host,
             config.mqtt.broker_port,
@@ -49,12 +65,19 @@ class MQTTClient:
 
     def disconnect(self) -> None:
         """Publish a clean 'offline' status and disconnect."""
+        if not self._enabled:
+            return
+
         self.publish(status_topic(config.node.node_id), "offline", retain=True)
         self._client.loop_stop()
         self._client.disconnect()
 
     def publish(self, topic: str, payload: str, retain: bool = False) -> None:
         """Publish a message to a topic."""
+        if not self._enabled:
+            logger.debug("MQTT disabled; dropping publish to %s", topic)
+            return
+
         result = self._client.publish(topic, payload, retain=retain)
         if result.rc != mqtt.MQTT_ERR_SUCCESS:
             logger.warning("Failed to publish to %s (rc=%s)", topic, result.rc)
@@ -64,6 +87,10 @@ class MQTTClient:
 
         The callback receives (topic, payload) for every matching message.
         """
+        if not self._enabled:
+            logger.debug("MQTT disabled; skipping subscribe to %s", topic)
+            return
+
         self._subscriptions[topic] = callback
         self._client.subscribe(topic)
         self._client.message_callback_add(topic, self._wrap_callback(callback))

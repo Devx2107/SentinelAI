@@ -30,10 +30,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from flask import Flask, jsonify
 
 from config import config
-from core.device_registry import DeviceRegistry
-from core.module_loader import ModuleLoader
-from core.mqtt_client import get_mqtt_client
-from database.db import init_db
+from routes.dashboard import dashboard_bp
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,6 +39,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+app.register_blueprint(dashboard_bp)
 
 _module_loader: Optional[ModuleLoader] = None
 
@@ -62,6 +60,11 @@ def _shutdown(signum: int, _frame: Optional[FrameType]) -> None:
 
 def main() -> None:
     global _module_loader
+
+    from core.device_registry import DeviceRegistry
+    from core.module_loader import ModuleLoader
+    from core.mqtt_client import get_mqtt_client
+    from database.db import init_db
 
     logger.info("Starting SentinelAI hub (node_id=%s)", config.node.node_id)
 

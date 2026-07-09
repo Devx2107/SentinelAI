@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SentinelAI Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <nav class="topbar" aria-label="Dashboard status">
+        <div class="topbar-brand">
+          <span class="topbar-dot"></span>
+          <span>SentinelAI</span>
+        </div>
+        <div class="topbar-status">
+          <span><strong>Node</strong> {{ node_id }}</span>
+          <span><strong>Uptime</strong> {{ uptime }}</span>
+        </div>
+      </nav>
+
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">SentinelAI Hub</p>
+          <h1>Dashboard</h1>
+          <p class="lede">Live device status and recent events from the hub database.</p>
+        </div>
+        <form class="sensor-filter" method="get" action="{{ url_for('dashboard.dashboard_page') }}">
+          <label for="sensor">Sensor filter</label>
+          <div class="sensor-filter-row">
+            <input
+              id="sensor"
+              name="sensor"
+              value="{{ sensor_filter }}"
+              placeholder="entry_monitor"
+              autocomplete="off"
+            >
+            <button type="submit">Apply</button>
+            {% if sensor_filter %}
+            <a class="ghost-link" href="{{ url_for('dashboard.dashboard_page') }}">Clear</a>
+            {% endif %}
+          </div>
+        </form>
+      </header>
+
+      <section class="summary-grid" aria-label="dashboard summary">
+        <article class="summary-card">
+          <span>Devices</span>
+          <strong>{{ devices|length }}</strong>
+        </article>
+        <article class="summary-card">
+          <span>Recent events</span>
+          <strong>{{ events|length }}</strong>
+        </article>
+        <article class="summary-card">
+          <span>Filter</span>
+          <strong>{{ sensor_filter or "All sensors" }}</strong>
+        </article>
+      </section>
+
+      <main class="content-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Network</p>
+              <h2>Devices</h2>
+            </div>
+            <span>Auto-refresh every 5 seconds</span>
+          </div>
+          <div
+            id="devices-feed"
+            hx-get="{{ url_for('dashboard.devices_partial') }}"
+            hx-trigger="load, every 5s"
+            hx-swap="innerHTML"
+          >
+            {% include "_devices_partial.html" %}
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Activity</p>
+              <h2>Recent events</h2>
+            </div>
+            <span>Auto-refresh every 5 seconds</span>
+          </div>
+          <div
+            id="events-feed"
+            hx-get="{{ url_for('dashboard.events_partial') }}{% if sensor_filter %}?sensor={{ sensor_filter|urlencode }}{% endif %}"
+            hx-trigger="load, every 5s"
+            hx-swap="innerHTML"
+          >
+            {% include "_events_partial.html" %}
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

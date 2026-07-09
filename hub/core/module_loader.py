@@ -14,7 +14,6 @@ from __future__ import annotations
 import logging
 
 from modules.base_module import BaseModule
-from modules.entry_monitor.module import EntryMonitorModule
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +24,20 @@ def build_modules(mqtt_client) -> list[BaseModule]:
     Add new modules here as they're built. Each one only needs to
     implement BaseModule — the loader doesn't care about internals.
     """
-    return [
-        EntryMonitorModule(mqtt_client=mqtt_client),
-        # Future: MotionMonitorModule(...), EnvironmentModule(...), RFIDAuthModule(...)
-    ]
+    modules: list[BaseModule] = []
+
+    try:
+        from modules.entry_monitor.module import EntryMonitorModule
+    except ModuleNotFoundError as exc:
+        logger.warning(
+            "Skipping entry_monitor module because a hardware dependency is unavailable: %s",
+            exc,
+        )
+    else:
+        modules.append(EntryMonitorModule(mqtt_client=mqtt_client))
+
+    # Future: MotionMonitorModule(...), EnvironmentModule(...), RFIDAuthModule(...)
+    return modules
 
 
 class ModuleLoader:
