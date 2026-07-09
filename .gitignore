@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# SentinelAI: TFLite model + labels are downloaded locally (see README),
+# not committed -- these binaries don't belong in git history.
+hub/modules/entry_monitor/vision/models/*.tflite
+hub/modules/entry_monitor/vision/models/*.txt
