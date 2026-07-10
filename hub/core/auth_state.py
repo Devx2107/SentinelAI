@@ -36,7 +36,9 @@ class RfidAuthState:
         window_seconds: Optional[float] = None,
     ) -> AuthSession:
         now = datetime.now(timezone.utc)
-        expires = now + timedelta(seconds=window_seconds or self._default_window_seconds)
+        expires = now + timedelta(
+            seconds=self._default_window_seconds if window_seconds is None else window_seconds
+        )
         session = AuthSession(
             card_uid=card_uid,
             card_label=card_label,
@@ -66,4 +68,3 @@ class RfidAuthState:
 
     def is_authorized(self) -> bool:
         return self.current() is not None
-

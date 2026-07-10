@@ -51,6 +51,8 @@ def health() -> "flask.Response":
 
 
 def _shutdown(signum: int, _frame: Optional[FrameType]) -> None:
+    from core.mqtt_client import get_mqtt_client
+
     logger.info("Received signal %s, shutting down...", signum)
     if _module_loader is not None:
         _module_loader.stop_all()

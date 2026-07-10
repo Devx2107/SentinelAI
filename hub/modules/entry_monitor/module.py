@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 MODULE_ID = "entry_monitor"
 SENSOR_ID = "pir_front_entry"
+MOTION = "motion"
 
 STATUS_PERSON_CONFIRMED = "person_confirmed"
 STATUS_MOTION_NO_PERSON = "motion_no_person"
@@ -58,7 +59,10 @@ class EntryMonitorModule(BaseModule):
                     exc,
                 )
             else:
-                self._pir = PIRSensor(sensor_id=SENSOR_ID, pin=config.gpio.pir_pin)
+                try:
+                    self._pir = PIRSensor(sensor_id=SENSOR_ID, pin=config.gpio.pir_pin)
+                except Exception as exc:
+                    logger.warning("Skipping PIR setup because it could not be initialized: %s", exc)
 
         if self._camera is None:
             try:
@@ -69,7 +73,10 @@ class EntryMonitorModule(BaseModule):
                     exc,
                 )
             else:
-                self._camera = FrameCapture(resolution=config.vision.capture_resolution)
+                try:
+                    self._camera = FrameCapture(resolution=config.vision.capture_resolution)
+                except Exception as exc:
+                    logger.warning("Skipping camera setup because it could not be initialized: %s", exc)
 
         if self._detector is None:
             try:
@@ -80,7 +87,10 @@ class EntryMonitorModule(BaseModule):
                     exc,
                 )
             else:
-                self._detector = PersonDetector()
+                try:
+                    self._detector = PersonDetector()
+                except Exception as exc:
+                    logger.warning("Skipping vision detector setup because it could not be initialized: %s", exc)
 
     def start(self) -> None:
         if self._pir is None or self._camera is None or self._detector is None:
@@ -101,11 +111,6 @@ class EntryMonitorModule(BaseModule):
         logger.info("Entry monitor module stopped")
 
     def _on_pir_change(self, state: str) -> None:
-        try:
-            from modules.entry_monitor.sensors.pir_sensor import MOTION
-        except ModuleNotFoundError:
-            MOTION = "motion"
-
         if state != MOTION:
             return  # Only act on motion trigger, not the "clear" transition.
 
@@ -179,4 +184,3 @@ class EntryMonitorModule(BaseModule):
         )
         topic = sensor_state_topic(config.node.node_id, SENSOR_ID)
         self._mqtt_client.publish(topic, payload.to_json())
-
