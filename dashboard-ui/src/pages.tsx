@@ -20,6 +20,8 @@ import type {
   SystemInfo,
 } from "./api/types";
 import { useQuery } from "./hooks";
+import { InsightsPanel, EventViews, BackupPanel } from "./featurePanels";
+import { dashboardVersion } from "./version";
 import {
   AuthBanner,
   Chart,
@@ -108,6 +110,7 @@ export function OverviewPage({ revision }: Live) {
                 icon="access"
               />
             </div>
+            <InsightsPanel revision={revision} />
             <div className="overview-grid">
               <Panel
                 title="Activity at a glance"
@@ -377,6 +380,10 @@ export function EventsPageView({ revision, events: incoming, status }: Live) {
           Reset
         </button>
       </div>
+      <EventViews
+        query={query}
+        onApply={(value) => setParams(new URLSearchParams(value))}
+      />
       <Panel
         title="Recorded events"
         aside={
@@ -948,7 +955,7 @@ export function SystemPage({ revision }: Live) {
                 </div>
                 <div>
                   <dt>Dashboard version</dt>
-                  <dd>2.0.0</dd>
+                  <dd>{dashboardVersion}</dd>
                 </div>
                 <div>
                   <dt>Data transport</dt>
@@ -967,6 +974,7 @@ export function SystemPage({ revision }: Live) {
               </dl>
             </Panel>
             <Readiness />
+            <BackupPanel mode={q.data.mode} />
           </>
         )}
       </State>

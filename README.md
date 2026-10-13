@@ -3,7 +3,8 @@
 ## Dashboard v2 — ready for local demo and Pi setup
 
 The responsive dashboard includes live events, device views, RFID card
-management, entry analytics and system readiness. Its prebuilt UI requires no
+management, entry analytics, security insights, saved event views, database
+backups and system readiness. Its prebuilt UI requires no
 Node.js on the Raspberry Pi.
 
 ```sh

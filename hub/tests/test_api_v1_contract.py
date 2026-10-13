@@ -55,7 +55,7 @@ def test_all_phase_one_contracts(tmp_path, monkeypatch):
     client = app.test_client()
     paths = {'/health':'health', '/overview':'overview', '/devices':'devices', '/devices/hub':'deviceDetail',
              '/events':'events', '/events/summary':'summary', '/rfid/cards':'cards', '/rfid/activity':'activity',
-             '/entry-monitor/stats':'entryStats', '/system':'system'}
+             '/entry-monitor/stats':'entryStats', '/system':'system', '/insights':'insights'}
     for path, name in paths.items():
         response = client.get('/api/v1' + path, headers=AUTH)
         assert response.status_code == 200, path

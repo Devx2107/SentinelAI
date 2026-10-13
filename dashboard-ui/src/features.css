@@ -1,0 +1,246 @@
+.insight-metrics {
+  display: grid;
+  grid-template-columns: 1.2fr 1.3fr 1fr;
+  gap: 18px;
+  padding: 4px 22px 22px;
+}
+.insight-metrics > div {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.insight-metrics strong {
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.8px;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+.insight-metrics span {
+  color: var(--secondary);
+  font-size: 11px;
+  max-width: 190px;
+}
+.insight-metrics b {
+  display: block;
+  font-weight: 400;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.insight-alert {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 22px;
+  border-top: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.insight-alert:hover {
+  background: var(--hover);
+}
+.insight-alert-copy {
+  flex: 1;
+  min-width: 0;
+}
+.insight-alert strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.insight-alert small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 4px;
+}
+.insight-alert > svg {
+  color: var(--accent);
+  flex: none;
+}
+.insight-clear {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--secondary);
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+  padding: 18px 22px;
+}
+.insight-clear svg {
+  color: var(--accent);
+  flex: none;
+}
+.insight-nodes {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 15px 22px;
+  border-top: 1px solid var(--border);
+}
+.insight-nodes > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.insight-nodes a {
+  display: flex;
+  gap: 10px;
+  font-size: 10px;
+  border: 1px solid var(--border);
+  padding: 5px 9px;
+  border-radius: 5px;
+  color: var(--secondary);
+}
+.insight-nodes strong {
+  color: var(--accent);
+  font-weight: 500;
+}
+.event-views {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: -7px 0 22px;
+  flex-wrap: wrap;
+}
+.preset-buttons,
+.saved-view-controls {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.event-views button {
+  font-size: 10px;
+  padding: 8px 10px;
+}
+.saved-view-controls select {
+  width: auto;
+  max-width: 200px;
+  font-size: 10px;
+  padding: 8px;
+}
+.backup-panel {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  justify-content: space-between;
+  padding: 0 22px 22px;
+}
+.backup-panel > div {
+  max-width: 650px;
+}
+.backup-panel strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.backup-panel p {
+  font-size: 12px;
+  color: var(--secondary);
+  margin: 7px 0;
+}
+.backup-panel small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.backup-panel button {
+  flex: none;
+  font-size: 12px;
+}
+.backup-message {
+  font-size: 12px;
+  margin: 0 22px 20px;
+  color: var(--secondary);
+}
+.backup-message.inline-error {
+  color: #f4b4a6;
+}
+@media (max-width: 1050px) {
+  .insight-metrics {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+  .insight-metrics > div {
+    gap: 16px;
+  }
+  .insight-metrics strong {
+    width: 60px;
+    font-size: 26px;
+  }
+  .insight-metrics span {
+    max-width: none;
+  }
+  .insight-metrics b {
+    display: inline;
+    margin-left: 7px;
+  }
+  .backup-panel {
+    align-items: start;
+  }
+  .event-views {
+    gap: 12px;
+  }
+}
+@media (max-width: 767px) {
+  .insight-metrics {
+    padding: 0 17px 18px;
+  }
+  .insight-metrics strong {
+    width: 45px;
+  }
+  .insight-metrics b {
+    display: block;
+    margin: 3px 0 0;
+  }
+  .insight-alert {
+    padding: 14px 17px;
+    gap: 9px;
+  }
+  .insight-alert strong {
+    font-size: 11px;
+  }
+  .insight-alert small {
+    font-size: 10px;
+  }
+  .insight-alert > .pill {
+    font-size: 8px;
+  }
+  .insight-alert > svg {
+    display: none;
+  }
+  .insight-nodes {
+    padding: 13px 17px;
+  }
+  .event-views {
+    margin-top: -5px;
+  }
+  .saved-view-controls {
+    width: 100%;
+  }
+  .saved-view-controls select {
+    flex: 1;
+    max-width: none;
+  }
+  .backup-panel {
+    flex-direction: column;
+    gap: 17px;
+    padding: 0 17px 19px;
+  }
+  .backup-panel button {
+    width: 100%;
+  }
+  .backup-message {
+    margin: 0 17px 17px;
+  }
+  .insight-clear {
+    padding: 17px;
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .insight-alert {
+    transition: none;
+  }
+}

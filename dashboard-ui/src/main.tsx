@@ -22,6 +22,8 @@ import {
   SystemPage,
 } from "./pages";
 import "./styles.css";
+import "./features.css";
+import { dashboardVersion } from "./version";
 const nav = [
   ["/", "overview", "Overview"],
   ["/events", "events", "Events"],
@@ -179,7 +181,7 @@ function App() {
             </p>
           </div>
           <div className="version">
-            SENTINEL OS <span>v2.0</span>
+            SENTINEL OS <span>v{dashboardVersion}</span>
           </div>
         </div>
       </aside>

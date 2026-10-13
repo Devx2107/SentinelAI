@@ -1,5 +1,7 @@
 # Dashboard v2 implementation
 
+Dashboard 2.1 adds [security insights, saved event views and database backups](dashboard-features-2.1.md).
+
 ## Main-repository integration
 
 The completed dashboard and RFID prerequisites are now integrated as normal

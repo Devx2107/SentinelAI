@@ -64,6 +64,7 @@ export function responseContract(path: string, method = "GET") {
       "/entry-monitor/stats": "entryStats",
       "/system": "system",
       "/health": "health",
+      "/insights": "insights",
     } as Record<string, string>
   )[route];
 }

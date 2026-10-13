@@ -13,7 +13,7 @@ from dashboard_dev import create_app
 def export():
     paths={'health':'/health','overview':'/overview','devices':'/devices','deviceDetail':'/devices/hub',
         'events':'/events?limit=2','summary':'/events/summary','cards':'/rfid/cards','activity':'/rfid/activity?limit=2',
-        'entryStats':'/entry-monitor/stats','system':'/system'}
+        'entryStats':'/entry-monitor/stats','system':'/system','insights':'/insights'}
     with TemporaryDirectory() as folder:
         app=create_app(Path(folder)/'fixture.db',clock=lambda:datetime(2026,10,13,12,tzinfo=timezone.utc))
         app.config.update(DASHBOARD_USER='admin',DASHBOARD_PASSWORD='dev')

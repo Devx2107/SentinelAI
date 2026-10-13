@@ -36,6 +36,7 @@ def test_live_wiring_uses_one_shared_auth_state_and_no_demo_generator(live_env, 
     assert not any('generator' in key for key in app.extensions)
     assert app.test_client().get('/app/').status_code==200
     stop()
+    assert not app.extensions['sentinel_heartbeat'].thread.is_alive()
     loader.stop_all.assert_called_once()
     mqtt.disconnect.assert_called_once()
 

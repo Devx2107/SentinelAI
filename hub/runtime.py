@@ -4,6 +4,7 @@ import os
 import time
 from services.common import Store, utcnow, integer
 from services.providers import Providers, LiveAuthWindow, LiveConnectionStatus, DatabaseEventSource
+from services.hub_heartbeat import HubHeartbeat
 
 
 def start_live():
@@ -18,15 +19,19 @@ def start_live():
     from core.module_loader import ModuleLoader
     init_db()
     mqtt = get_mqtt_client()
-    loader = reader = None
+    loader = reader = heartbeat = None
     def stop():
         try:
-            if loader:
-                loader.stop_all()
-            elif reader:
-                reader.close()
+            if heartbeat:
+                heartbeat.stop()
         finally:
-            mqtt.disconnect()
+            try:
+                if loader:
+                    loader.stop_all()
+                elif reader:
+                    reader.close()
+            finally:
+                mqtt.disconnect()
     try:
         mqtt.connect()
         deadline = time.monotonic() + 10
@@ -46,12 +51,18 @@ def start_live():
         loader.start_all()
         registry = DeviceRegistry()
         registry.register_with_mqtt(mqtt)
-        registry.register_local_device(config.node.node_id, ['pir', 'camera', 'entry_monitor'] + (['rfid'] if reader else []))
+        capabilities = ['pir', 'camera', 'entry_monitor'] + (['rfid'] if reader else [])
+        registry.register_local_device(config.node.node_id, capabilities)
+        stale_after = integer(os.getenv('SENTINELAI_STALE_AFTER_SECONDS', '90'), 'stale_after_seconds', maximum=86400)
+        heartbeat = HubHeartbeat(mqtt, lambda: registry.register_local_device(config.node.node_id, capabilities),
+            config.node.node_id, interval=max(.25, min(30, stale_after / 3)))
+        heartbeat.start()
         app = Flask(__name__, template_folder='templates', static_folder='static')
         store = Store(config.database.path)
         app.extensions['sentinel_providers'] = Providers(store, LiveAuthWindow(loader.auth_state),
             LiveConnectionStatus(utcnow(), lambda: mqtt.is_connected), DatabaseEventSource(store), node_id=config.node.node_id,
-            mode='live', stale_after_seconds=integer(os.getenv('SENTINELAI_STALE_AFTER_SECONDS', '90'), 'stale_after_seconds', maximum=86400))
+            mode='live', stale_after_seconds=stale_after)
+        app.extensions['sentinel_heartbeat'] = heartbeat
         app.extensions['sentinel_readiness'] = [dict(name='Entry monitor', ok=True, detail='PIR, camera and model initialized.'),
             dict(name='RFID reader', ok=reader is not None, detail='Physical reader adapter loaded.' if reader else 'No physical reader adapter configured; card management is available, scanning is not.')]
         app.extensions['sentinel_reader'] = reader

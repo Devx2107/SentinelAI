@@ -70,3 +70,22 @@ export type SystemInfo = {
   stale_after_seconds: number;
   mode: "demo" | "live";
 };
+
+export type Insights = {
+  generated_at: string;
+  recent: { warnings_1h: number; critical_1h: number; cards_denied_1h: number };
+  comparison: {
+    current: number;
+    previous: number;
+    difference: number;
+    percent_change: number | null;
+  };
+  alerts: {
+    id: string;
+    severity: string;
+    title: string;
+    detail: string;
+    href: string;
+  }[];
+  top_devices: { node_id: string; events: number; attention_events: number }[];
+};

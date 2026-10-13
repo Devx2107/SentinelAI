@@ -584,6 +584,108 @@
       },
       "required": ["error"],
       "additionalProperties": false
+    },
+    "insights": {
+      "type": "object",
+      "properties": {
+        "generated_at": {
+          "type": "string"
+        },
+        "recent": {
+          "type": "object",
+          "properties": {
+            "warnings_1h": {
+              "type": "integer"
+            },
+            "critical_1h": {
+              "type": "integer"
+            },
+            "cards_denied_1h": {
+              "type": "integer"
+            }
+          },
+          "required": ["warnings_1h", "critical_1h", "cards_denied_1h"],
+          "additionalProperties": false
+        },
+        "comparison": {
+          "type": "object",
+          "properties": {
+            "current": {
+              "type": "integer"
+            },
+            "previous": {
+              "type": "integer"
+            },
+            "difference": {
+              "type": "integer"
+            },
+            "percent_change": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": ["current", "previous", "difference", "percent_change"],
+          "additionalProperties": false
+        },
+        "alerts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "severity": {
+                "enum": ["warning", "critical"]
+              },
+              "title": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              },
+              "href": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "severity", "title", "detail", "href"],
+            "additionalProperties": false
+          }
+        },
+        "top_devices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "node_id": {
+                "type": "string"
+              },
+              "events": {
+                "type": "integer"
+              },
+              "attention_events": {
+                "type": "integer"
+              }
+            },
+            "required": ["node_id", "events", "attention_events"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "generated_at",
+        "recent",
+        "comparison",
+        "alerts",
+        "top_devices"
+      ],
+      "additionalProperties": false
     }
   }
 }

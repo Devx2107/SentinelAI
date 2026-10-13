@@ -794,6 +794,43 @@
     "stale_after_seconds": 90,
     "uptime_seconds": 0.0
   },
+  "insights": {
+    "alerts": [
+      {
+        "detail": "Open the timeline to review the recorded activity and its context.",
+        "href": "/events?severity=warning&since=2026-10-13T11%3A00%3A00Z",
+        "id": "recent-warning",
+        "severity": "warning",
+        "title": "1 warning event in the last hour"
+      },
+      {
+        "detail": "Check its power and network connection. Status comes from the latest recorded heartbeat.",
+        "href": "/devices/node-zero-02",
+        "id": "device-node-zero-02",
+        "severity": "warning",
+        "title": "node-zero-02 is offline"
+      }
+    ],
+    "comparison": {
+      "current": 103,
+      "difference": -3,
+      "percent_change": -2.8,
+      "previous": 106
+    },
+    "generated_at": "2026-10-13T12:00:00Z",
+    "recent": {
+      "cards_denied_1h": 0,
+      "critical_1h": 0,
+      "warnings_1h": 1
+    },
+    "top_devices": [
+      {
+        "attention_events": 25,
+        "events": 103,
+        "node_id": "hub"
+      }
+    ]
+  },
   "event": {
     "confidence": 0.602,
     "id": 800,

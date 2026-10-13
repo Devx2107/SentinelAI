@@ -11,10 +11,13 @@ from services.overview import overview
 from services.rfid import create_card, list_cards, patch_card
 from services.stats import entry_stats, event_summary
 from services.system import system_status
+from services.insights import security_insights
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
 from api.stream import stream_bp, StreamSlots
 api_v1.register_blueprint(stream_bp)
+from api.backup import backup_bp
+api_v1.register_blueprint(backup_bp)
 
 
 @api_v1.record_once
@@ -92,6 +95,11 @@ def health():
 @api_v1.get('/overview')
 def get_overview():
     return jsonify(overview(providers()))
+
+
+@api_v1.get('/insights')
+def insights():
+    return jsonify(security_insights(providers()))
 
 
 @api_v1.get('/devices')
