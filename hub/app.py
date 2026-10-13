@@ -31,6 +31,7 @@ from flask import Flask, jsonify
 
 from config import config
 from routes.dashboard import dashboard_bp
+from api.v1 import api_v1
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.register_blueprint(dashboard_bp)
+app.register_blueprint(api_v1)
 
 _module_loader: Optional[ModuleLoader] = None
 

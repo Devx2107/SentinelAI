@@ -1,0 +1,666 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "event": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "node_id": {
+          "type": "string"
+        },
+        "sensor": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "timestamp",
+        "node_id",
+        "sensor",
+        "status",
+        "severity",
+        "confidence",
+        "message"
+      ],
+      "additionalProperties": false
+    },
+    "device": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "effective_status": {
+          "enum": [
+            "online",
+            "stale",
+            "offline"
+          ]
+        },
+        "last_seen": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seconds_since_seen": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "node_id",
+        "status",
+        "effective_status",
+        "last_seen",
+        "seconds_since_seen",
+        "capabilities"
+      ],
+      "additionalProperties": false
+    },
+    "card": {
+      "type": "object",
+      "properties": {
+        "card_uid": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "last_seen": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "card_uid",
+        "label",
+        "active",
+        "notes",
+        "created_at",
+        "last_seen"
+      ],
+      "additionalProperties": false
+    },
+    "health": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "ok",
+            "degraded"
+          ]
+        },
+        "node_id": {
+          "type": "string"
+        },
+        "uptime_seconds": {
+          "type": "number"
+        },
+        "db_ok": {
+          "type": "boolean"
+        },
+        "version": {
+          "const": "dashboard-v2"
+        }
+      },
+      "required": [
+        "status",
+        "node_id",
+        "uptime_seconds",
+        "db_ok",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "overview": {
+      "type": "object",
+      "properties": {
+        "hub": {
+          "type": "object",
+          "properties": {
+            "node_id": {
+              "type": "string"
+            },
+            "uptime_seconds": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "node_id",
+            "uptime_seconds"
+          ],
+          "additionalProperties": false
+        },
+        "counts": {
+          "type": "object",
+          "properties": {
+            "devices_total": {
+              "type": "integer"
+            },
+            "devices_online": {
+              "type": "integer"
+            },
+            "devices_stale": {
+              "type": "integer"
+            },
+            "devices_offline": {
+              "type": "integer"
+            },
+            "events_24h": {
+              "type": "integer"
+            },
+            "warnings_24h": {
+              "type": "integer"
+            },
+            "critical_24h": {
+              "type": "integer"
+            },
+            "persons_confirmed_24h": {
+              "type": "integer"
+            },
+            "cards_denied_24h": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "devices_total",
+            "devices_online",
+            "devices_stale",
+            "devices_offline",
+            "events_24h",
+            "warnings_24h",
+            "critical_24h",
+            "persons_confirmed_24h",
+            "cards_denied_24h"
+          ],
+          "additionalProperties": false
+        },
+        "auth_window": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "active": {
+                  "type": "boolean"
+                },
+                "card_uid": {
+                  "type": "string"
+                },
+                "card_label": {
+                  "type": "string"
+                },
+                "expires_at": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "active",
+                "card_uid",
+                "card_label",
+                "expires_at"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "latest_events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        }
+      },
+      "required": [
+        "hub",
+        "counts",
+        "auth_window",
+        "latest_events"
+      ],
+      "additionalProperties": false
+    },
+    "devices": {
+      "type": "object",
+      "properties": {
+        "devices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/device"
+          }
+        }
+      },
+      "required": [
+        "devices"
+      ],
+      "additionalProperties": false
+    },
+    "deviceDetail": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "effective_status": {
+          "enum": [
+            "online",
+            "stale",
+            "offline"
+          ]
+        },
+        "last_seen": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seconds_since_seen": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "recent_events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        }
+      },
+      "required": [
+        "node_id",
+        "status",
+        "effective_status",
+        "last_seen",
+        "seconds_since_seen",
+        "capabilities",
+        "recent_events"
+      ],
+      "additionalProperties": false
+    },
+    "events": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "total_matching": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "events",
+        "next_cursor",
+        "total_matching"
+      ],
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "range": {
+          "enum": [
+            "24h",
+            "7d"
+          ]
+        },
+        "bucket": {
+          "enum": [
+            "hour",
+            "day"
+          ]
+        },
+        "series": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "t": {
+                "type": "string"
+              },
+              "info": {
+                "type": "integer"
+              },
+              "warning": {
+                "type": "integer"
+              },
+              "critical": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "t",
+              "info",
+              "warning",
+              "critical"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "by_sensor": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sensor": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "sensor",
+              "count"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "range",
+        "bucket",
+        "series",
+        "by_sensor"
+      ],
+      "additionalProperties": false
+    },
+    "cards": {
+      "type": "object",
+      "properties": {
+        "cards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/card"
+          }
+        }
+      },
+      "required": [
+        "cards"
+      ],
+      "additionalProperties": false
+    },
+    "activity": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        }
+      },
+      "required": [
+        "events"
+      ],
+      "additionalProperties": false
+    },
+    "entryStats": {
+      "type": "object",
+      "properties": {
+        "range": {
+          "enum": [
+            "24h",
+            "7d"
+          ]
+        },
+        "persons_confirmed": {
+          "type": "integer"
+        },
+        "motion_no_person": {
+          "type": "integer"
+        },
+        "avg_confidence_confirmed": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confidence_histogram": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "bucket": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "bucket",
+              "count"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "series": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "t": {
+                "type": "string"
+              },
+              "person_confirmed": {
+                "type": "integer"
+              },
+              "motion_no_person": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "t",
+              "person_confirmed",
+              "motion_no_person"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "range",
+        "persons_confirmed",
+        "motion_no_person",
+        "avg_confidence_confirmed",
+        "confidence_histogram",
+        "series"
+      ],
+      "additionalProperties": false
+    },
+    "system": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "type": "string"
+        },
+        "uptime_seconds": {
+          "type": "number"
+        },
+        "db": {
+          "type": "object",
+          "properties": {
+            "path_basename": {
+              "type": "string"
+            },
+            "size_bytes": {
+              "type": "integer"
+            },
+            "events": {
+              "type": "integer"
+            },
+            "devices": {
+              "type": "integer"
+            },
+            "cards": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "path_basename",
+            "size_bytes",
+            "events",
+            "devices",
+            "cards"
+          ],
+          "additionalProperties": false
+        },
+        "mqtt_connected": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stale_after_seconds": {
+          "type": "integer"
+        },
+        "mode": {
+          "enum": [
+            "demo",
+            "live"
+          ]
+        }
+      },
+      "required": [
+        "node_id",
+        "uptime_seconds",
+        "db",
+        "mqtt_connected",
+        "stale_after_seconds",
+        "mode"
+      ],
+      "additionalProperties": false
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
