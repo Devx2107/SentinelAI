@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 from flask import Flask
 
 from api.v1 import api_v1
+from api.ui import ui_bp
 from services.common import Store, integer, utcnow
 from services.providers import DatabaseEventSource, DemoAuthWindow, DemoConnectionStatus, Providers
 from tools.seed_demo_data import seed_demo_data
@@ -35,14 +36,19 @@ def create_app(database_path=None, *, clock=utcnow, seed=True):
     app.config.update(DASHBOARD_USER=os.getenv('SENTINELAI_DASHBOARD_USER', 'admin'),
                       DASHBOARD_PASSWORD=os.getenv('SENTINELAI_DASHBOARD_PASSWORD', 'dev'))
     app.register_blueprint(api_v1)
+    app.register_blueprint(ui_bp)
     return app
 
 
 if __name__ == '__main__':
     app = create_app()
+    from services.demo_generator import DemoGenerator
+    generator = DemoGenerator(app.extensions['sentinel_providers'])
+    generator.start()
     try:
         app.run(host='127.0.0.1', port=5001, threaded=True, use_reloader=False)
     finally:
+        generator.stop()
         temporary = app.extensions.get('demo_temp_directory')
         if temporary:
             temporary.cleanup()

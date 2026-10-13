@@ -58,11 +58,7 @@
           "type": "string"
         },
         "effective_status": {
-          "enum": [
-            "online",
-            "stale",
-            "offline"
-          ]
+          "enum": ["online", "stale", "offline"]
         },
         "last_seen": {
           "anyOf": [
@@ -151,10 +147,7 @@
       "type": "object",
       "properties": {
         "status": {
-          "enum": [
-            "ok",
-            "degraded"
-          ]
+          "enum": ["ok", "degraded"]
         },
         "node_id": {
           "type": "string"
@@ -169,13 +162,7 @@
           "const": "dashboard-v2"
         }
       },
-      "required": [
-        "status",
-        "node_id",
-        "uptime_seconds",
-        "db_ok",
-        "version"
-      ],
+      "required": ["status", "node_id", "uptime_seconds", "db_ok", "version"],
       "additionalProperties": false
     },
     "overview": {
@@ -191,10 +178,7 @@
               "type": "number"
             }
           },
-          "required": [
-            "node_id",
-            "uptime_seconds"
-          ],
+          "required": ["node_id", "uptime_seconds"],
           "additionalProperties": false
         },
         "counts": {
@@ -259,12 +243,7 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "active",
-                "card_uid",
-                "card_label",
-                "expires_at"
-              ],
+              "required": ["active", "card_uid", "card_label", "expires_at"],
               "additionalProperties": false
             },
             {
@@ -279,12 +258,7 @@
           }
         }
       },
-      "required": [
-        "hub",
-        "counts",
-        "auth_window",
-        "latest_events"
-      ],
+      "required": ["hub", "counts", "auth_window", "latest_events"],
       "additionalProperties": false
     },
     "devices": {
@@ -297,9 +271,7 @@
           }
         }
       },
-      "required": [
-        "devices"
-      ],
+      "required": ["devices"],
       "additionalProperties": false
     },
     "deviceDetail": {
@@ -312,11 +284,7 @@
           "type": "string"
         },
         "effective_status": {
-          "enum": [
-            "online",
-            "stale",
-            "offline"
-          ]
+          "enum": ["online", "stale", "offline"]
         },
         "last_seen": {
           "anyOf": [
@@ -385,27 +353,17 @@
           "type": "integer"
         }
       },
-      "required": [
-        "events",
-        "next_cursor",
-        "total_matching"
-      ],
+      "required": ["events", "next_cursor", "total_matching"],
       "additionalProperties": false
     },
     "summary": {
       "type": "object",
       "properties": {
         "range": {
-          "enum": [
-            "24h",
-            "7d"
-          ]
+          "enum": ["24h", "7d"]
         },
         "bucket": {
-          "enum": [
-            "hour",
-            "day"
-          ]
+          "enum": ["hour", "day"]
         },
         "series": {
           "type": "array",
@@ -425,12 +383,7 @@
                 "type": "integer"
               }
             },
-            "required": [
-              "t",
-              "info",
-              "warning",
-              "critical"
-            ],
+            "required": ["t", "info", "warning", "critical"],
             "additionalProperties": false
           }
         },
@@ -446,20 +399,12 @@
                 "type": "integer"
               }
             },
-            "required": [
-              "sensor",
-              "count"
-            ],
+            "required": ["sensor", "count"],
             "additionalProperties": false
           }
         }
       },
-      "required": [
-        "range",
-        "bucket",
-        "series",
-        "by_sensor"
-      ],
+      "required": ["range", "bucket", "series", "by_sensor"],
       "additionalProperties": false
     },
     "cards": {
@@ -472,9 +417,7 @@
           }
         }
       },
-      "required": [
-        "cards"
-      ],
+      "required": ["cards"],
       "additionalProperties": false
     },
     "activity": {
@@ -487,19 +430,14 @@
           }
         }
       },
-      "required": [
-        "events"
-      ],
+      "required": ["events"],
       "additionalProperties": false
     },
     "entryStats": {
       "type": "object",
       "properties": {
         "range": {
-          "enum": [
-            "24h",
-            "7d"
-          ]
+          "enum": ["24h", "7d"]
         },
         "persons_confirmed": {
           "type": "integer"
@@ -529,10 +467,7 @@
                 "type": "integer"
               }
             },
-            "required": [
-              "bucket",
-              "count"
-            ],
+            "required": ["bucket", "count"],
             "additionalProperties": false
           }
         },
@@ -551,11 +486,7 @@
                 "type": "integer"
               }
             },
-            "required": [
-              "t",
-              "person_confirmed",
-              "motion_no_person"
-            ],
+            "required": ["t", "person_confirmed", "motion_no_person"],
             "additionalProperties": false
           }
         }
@@ -621,10 +552,7 @@
           "type": "integer"
         },
         "mode": {
-          "enum": [
-            "demo",
-            "live"
-          ]
+          "enum": ["demo", "live"]
         }
       },
       "required": [
@@ -650,16 +578,11 @@
               "type": "string"
             }
           },
-          "required": [
-            "code",
-            "message"
-          ],
+          "required": ["code", "message"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "error"
-      ],
+      "required": ["error"],
       "additionalProperties": false
     }
   }

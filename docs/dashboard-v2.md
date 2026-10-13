@@ -1,5 +1,9 @@
 # Dashboard v2: Phase 1 backend
 
+> Historical Phase 1 notes. The completed UI, streams and live startup are
+> documented in [dashboard-v2-complete.md](dashboard-v2-complete.md) and
+> [RPI_START.md](RPI_START.md).
+
 This phase adds an authenticated REST API and an isolated, seeded demo runner.
 The existing dashboard at `/dashboard` is preserved. The React application at
 `/app/` and live SSE feed are later phases, not part of this delivery.

@@ -20,13 +20,20 @@ class FrameCapture:
 
     def __init__(self, resolution: tuple[int, int]) -> None:
         self._camera = Picamera2()
-        config = self._camera.create_still_configuration(
-            main={"size": resolution, "format": "RGB888"}
-        )
-        self._camera.configure(config)
+        try:
+            config = self._camera.create_still_configuration(
+                main={"size": resolution, "format": "RGB888"}
+            )
+            self._camera.configure(config)
+        except BaseException:
+            self._camera.close()
+            raise
         self._started = False
+        self._closed = False
 
     def start(self) -> None:
+        if self._closed:
+            raise RuntimeError('Camera is closed; construct a new capture instance.')
         if not self._started:
             self._camera.start()
             self._started = True
@@ -39,7 +46,13 @@ class FrameCapture:
         return self._camera.capture_array()
 
     def stop(self) -> None:
-        if self._started:
-            self._camera.stop()
+        if self._closed:
+            return
+        try:
+            if self._started:
+                self._camera.stop()
+        finally:
+            self._camera.close()
             self._started = False
+            self._closed = True
             logger.info("Camera stopped")

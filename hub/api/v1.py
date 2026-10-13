@@ -13,6 +13,15 @@ from services.stats import entry_stats, event_summary
 from services.system import system_status
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
+from api.stream import stream_bp, StreamSlots
+api_v1.register_blueprint(stream_bp)
+
+
+@api_v1.record_once
+def initialize(state):
+    state.app.extensions['sentinel_stream_slots'] = StreamSlots()
+    from api.rate_limit import WriteLimiter
+    state.app.extensions['sentinel_write_limiter'] = WriteLimiter()
 
 
 def providers():
@@ -26,11 +35,14 @@ def providers():
 def authenticate():
     if request.endpoint != 'api_v1.health':
         require_auth()
+    if request.method in ('POST', 'PATCH') and request.path.startswith('/api/v1/rfid/'):
+        current_app.extensions['sentinel_write_limiter'].check(request.remote_addr or 'unknown')
 
 
 @api_v1.after_request
 def response_headers(response):
-    response.headers['Cache-Control'] = 'no-store'
+    if response.mimetype != 'text/event-stream':
+        response.headers['Cache-Control'] = 'no-store'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Referrer-Policy'] = 'no-referrer'
     response.headers['X-Frame-Options'] = 'DENY'
@@ -43,6 +55,8 @@ def service_error(error):
     response.status_code = error.status
     if error.status == 401:
         response.headers['WWW-Authenticate'] = 'Basic realm="SentinelAI Dashboard", charset="UTF-8"'
+    if error.status == 429:
+        response.headers['Retry-After'] = '60'
     return response
 
 
@@ -55,6 +69,12 @@ def database_error(error):
 @api_v1.errorhandler(HTTPException)
 def http_error(error):
     return service_error(ServiceError('invalid_request', error.name, error.code))
+
+
+@api_v1.errorhandler(Exception)
+def internal_error(error):
+    current_app.logger.exception('Dashboard request failed')
+    return service_error(ServiceError('internal_error', 'The request could not be completed. Please retry.', 500))
 
 
 @api_v1.get('/health')
@@ -133,6 +153,21 @@ def entry():
 @api_v1.get('/system')
 def system():
     return jsonify(system_status(providers()))
+
+
+@api_v1.get('/readiness')
+def readiness():
+    p = providers()
+    if p.mode == 'demo':
+        checks = [dict(name='Dashboard & API', ok=True, detail='Demo environment; synthetic events are enabled by the runner.'),
+                  dict(name='Raspberry Pi hardware', ok=False, detail='Not connected in demo mode.'),
+                  dict(name='RFID reader', ok=False, detail='Configure a physical reader adapter on the Pi.')]
+    else:
+        checks = current_app.extensions.get('sentinel_readiness', []) + [dict(name='MQTT broker', ok=bool(p.connection.current()['mqtt_connected']), detail='Current broker connection state.')]
+        reader = current_app.extensions.get('sentinel_reader')
+        if reader is not None and hasattr(reader, 'ready'):
+            checks = [{**c, 'ok': reader.ready, 'detail': 'Reader polling is active.' if reader.ready else 'Reader polling failed; check the hub logs and wiring.'} if c['name'] == 'RFID reader' else c for c in checks]
+    return jsonify(checks=checks)
 
 
 @api_v1.route('/<path:unknown>', methods=['GET', 'POST', 'PATCH', 'DELETE', 'PUT'])

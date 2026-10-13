@@ -28,7 +28,10 @@ def series(providers, range_value, bucket, column, keys, sensor=None):
     if sensor:
         where += ' AND sensor = ?'
         params.append(sensor)
-    rows = providers.store.rows(f'SELECT strftime(?, timestamp) AS t, {column} AS kind, COUNT(*) AS n FROM events WHERE {where} GROUP BY t, {column}', [fmt, *params])
+    group = column
+    if column == 'status' and sensor == 'entry_monitor':
+        group = "CASE status WHEN 'person_confirmed_authenticated' THEN 'person_confirmed' WHEN 'motion_authenticated' THEN 'motion_no_person' ELSE status END"
+    rows = providers.store.rows(f'SELECT strftime(?, timestamp) AS t, {group} AS kind, COUNT(*) AS n FROM events WHERE {where} GROUP BY t, kind', [fmt, *params])
     result = {point: {'t': point, **dict.fromkeys(keys, 0)} for point in points}
     for row in rows:
         if row['t'] in result and row['kind'] in keys:
@@ -46,13 +49,13 @@ def entry_stats(providers, range_value='24h'):
     bucket = 'hour' if range_value == '24h' else 'day'
     values, where, params = series(providers, range_value, bucket, 'status', ('person_confirmed', 'motion_no_person'), 'entry_monitor')
     aggregate = providers.store.rows(f'''SELECT
-        COALESCE(SUM(status = 'person_confirmed'), 0) AS persons_confirmed,
-        COALESCE(SUM(status = 'motion_no_person'), 0) AS motion_no_person,
-        AVG(CASE WHEN status = 'person_confirmed' THEN confidence END) AS avg_confidence_confirmed
+        COALESCE(SUM(status IN ('person_confirmed', 'person_confirmed_authenticated')), 0) AS persons_confirmed,
+        COALESCE(SUM(status IN ('motion_no_person', 'motion_authenticated')), 0) AS motion_no_person,
+        AVG(CASE WHEN status IN ('person_confirmed', 'person_confirmed_authenticated') THEN confidence END) AS avg_confidence_confirmed
         FROM events WHERE {where}''', params)[0]
     histogram = [{'bucket': f'{i / 10:.1f}-{(i + 1) / 10:.1f}', 'count': 0} for i in range(10)]
     rows = providers.store.rows(f'''SELECT MIN(CAST(confidence * 10 AS INTEGER), 9) AS bin, COUNT(*) AS count
-        FROM events WHERE {where} AND status = 'person_confirmed' AND confidence BETWEEN 0 AND 1 GROUP BY bin''', params)
+        FROM events WHERE {where} AND status IN ('person_confirmed', 'person_confirmed_authenticated') AND confidence BETWEEN 0 AND 1 GROUP BY bin''', params)
     for row in rows:
         histogram[row['bin']]['count'] = row['count']
     return {'range': range_value, **aggregate, 'confidence_histogram': histogram, 'series': values}

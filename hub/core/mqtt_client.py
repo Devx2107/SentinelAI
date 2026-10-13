@@ -63,14 +63,25 @@ class MQTTClient:
         )
         self._client.loop_start()
 
+    @property
+    def is_connected(self) -> bool:
+        return bool(self._client and self._client.is_connected())
+
     def disconnect(self) -> None:
         """Publish a clean 'offline' status and disconnect."""
         if not self._enabled:
             return
 
-        self.publish(status_topic(config.node.node_id), "offline", retain=True)
-        self._client.loop_stop()
-        self._client.disconnect()
+        try:
+            if self.is_connected:
+                result = self._client.publish(status_topic(config.node.node_id), "offline", qos=1, retain=True)
+                if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                    result.wait_for_publish(timeout=5)
+        finally:
+            try:
+                self._client.disconnect()
+            finally:
+                self._client.loop_stop()
 
     def publish(self, topic: str, payload: str, retain: bool = False) -> None:
         """Publish a message to a topic."""
@@ -107,6 +118,8 @@ class MQTTClient:
 
     def _on_connect(self, _client, _userdata, _flags, rc: int) -> None:
         if rc == 0:
+            for topic in list(self._subscriptions):
+                self._client.subscribe(topic)
             logger.info("Connected to MQTT broker at %s:%s", config.mqtt.broker_host, config.mqtt.broker_port)
             # Announce ourselves as online, retained so late subscribers see it.
             self.publish(status_topic(config.node.node_id), "online", retain=True)

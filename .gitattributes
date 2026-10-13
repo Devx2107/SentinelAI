@@ -1,0 +1,2 @@
+# Runtime databases are never part of source/deployment archives.
+hub/database/sentinelai.db export-ignore

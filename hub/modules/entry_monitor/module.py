@@ -99,15 +99,17 @@ class EntryMonitorModule(BaseModule):
             )
             return
 
-        self._pir.on_change(self._on_pir_change)
         self._camera.start()
+        self._pir.on_change(self._on_pir_change)
         logger.info("Entry monitor module started (PIR on GPIO %s)", config.gpio.pir_pin)
 
     def stop(self) -> None:
-        if self._pir is not None:
-            self._pir.close()
-        if self._camera is not None:
-            self._camera.stop()
+        try:
+            if self._pir is not None:
+                self._pir.close()
+        finally:
+            if self._camera is not None:
+                self._camera.stop()
         logger.info("Entry monitor module stopped")
 
     def _on_pir_change(self, state: str) -> None:

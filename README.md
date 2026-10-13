@@ -1,5 +1,19 @@
 # SentinelAI — AI-Powered IoT Operating System
 
+## Dashboard v2 — ready for local demo and Pi setup
+
+The responsive dashboard includes live events, device views, RFID card
+management, entry analytics and system readiness. Its prebuilt UI requires no
+Node.js on the Raspberry Pi.
+
+```sh
+python hub/run.py --mode demo
+```
+
+Open `http://127.0.0.1:5001/app/` with standalone demo credentials `admin` /
+`dev`. See [Pi startup instructions](docs/RPI_START.md) and
+[dashboard features and development](docs/dashboard-v2-complete.md).
+
 ## 🏠 Overview
 
 **SentinelAI** is a modular, distributed IoT operating system for home security, safety, environmental monitoring, and automation — built on a Raspberry Pi 4 hub, Raspberry Pi Zero W edge nodes, and an Arduino Uno peripheral.

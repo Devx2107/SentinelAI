@@ -1,0 +1,829 @@
+{
+  "health": {
+    "db_ok": true,
+    "node_id": "hub",
+    "status": "ok",
+    "uptime_seconds": 0.0,
+    "version": "dashboard-v2"
+  },
+  "overview": {
+    "auth_window": null,
+    "counts": {
+      "cards_denied_24h": 3,
+      "critical_24h": 1,
+      "devices_offline": 1,
+      "devices_online": 2,
+      "devices_stale": 0,
+      "devices_total": 3,
+      "events_24h": 103,
+      "persons_confirmed_24h": 22,
+      "warnings_24h": 24
+    },
+    "hub": {
+      "node_id": "hub",
+      "uptime_seconds": 0.0
+    },
+    "latest_events": [
+      {
+        "confidence": 0.602,
+        "id": 800,
+        "message": "DEMO: person confirmed at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "warning",
+        "status": "person_confirmed",
+        "timestamp": "2026-10-13T11:50:35Z"
+      },
+      {
+        "confidence": 0.125,
+        "id": 799,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T11:46:23Z"
+      },
+      {
+        "confidence": 0.361,
+        "id": 798,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T10:57:20Z"
+      },
+      {
+        "confidence": null,
+        "id": 797,
+        "message": "DEMO: card authorized at front entry",
+        "node_id": "hub",
+        "sensor": "rfid_auth",
+        "severity": "info",
+        "status": "card_authorized",
+        "timestamp": "2026-10-13T09:48:33Z"
+      },
+      {
+        "confidence": 0.201,
+        "id": 796,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T09:39:24Z"
+      },
+      {
+        "confidence": 0.125,
+        "id": 795,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T09:39:07Z"
+      },
+      {
+        "confidence": 0.079,
+        "id": 794,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T09:30:32Z"
+      },
+      {
+        "confidence": 0.331,
+        "id": 793,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T09:21:54Z"
+      },
+      {
+        "confidence": null,
+        "id": 792,
+        "message": "DEMO: card authorized at front entry",
+        "node_id": "hub",
+        "sensor": "rfid_auth",
+        "severity": "info",
+        "status": "card_authorized",
+        "timestamp": "2026-10-13T09:11:24Z"
+      },
+      {
+        "confidence": 0.715,
+        "id": 791,
+        "message": "DEMO: person confirmed at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "warning",
+        "status": "person_confirmed",
+        "timestamp": "2026-10-13T09:05:12Z"
+      }
+    ]
+  },
+  "devices": {
+    "devices": [
+      {
+        "capabilities": ["pir", "camera", "entry_monitor", "rfid"],
+        "effective_status": "online",
+        "last_seen": "2026-10-13T11:59:55Z",
+        "node_id": "hub",
+        "seconds_since_seen": 5.0,
+        "status": "online"
+      },
+      {
+        "capabilities": ["pir"],
+        "effective_status": "online",
+        "last_seen": "2026-10-13T11:59:48Z",
+        "node_id": "node-zero-01",
+        "seconds_since_seen": 12.0,
+        "status": "online"
+      },
+      {
+        "capabilities": ["pir"],
+        "effective_status": "offline",
+        "last_seen": "2026-10-13T09:00:00Z",
+        "node_id": "node-zero-02",
+        "seconds_since_seen": 10800.0,
+        "status": "offline"
+      }
+    ]
+  },
+  "deviceDetail": {
+    "capabilities": ["pir", "camera", "entry_monitor", "rfid"],
+    "effective_status": "online",
+    "last_seen": "2026-10-13T11:59:55Z",
+    "node_id": "hub",
+    "recent_events": [
+      {
+        "confidence": 0.602,
+        "id": 800,
+        "message": "DEMO: person confirmed at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "warning",
+        "status": "person_confirmed",
+        "timestamp": "2026-10-13T11:50:35Z"
+      },
+      {
+        "confidence": 0.125,
+        "id": 799,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T11:46:23Z"
+      },
+      {
+        "confidence": 0.361,
+        "id": 798,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T10:57:20Z"
+      },
+      {
+        "confidence": null,
+        "id": 797,
+        "message": "DEMO: card authorized at front entry",
+        "node_id": "hub",
+        "sensor": "rfid_auth",
+        "severity": "info",
+        "status": "card_authorized",
+        "timestamp": "2026-10-13T09:48:33Z"
+      },
+      {
+        "confidence": 0.201,
+        "id": 796,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T09:39:24Z"
+      },
+      {
+        "confidence": 0.125,
+        "id": 795,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T09:39:07Z"
+      },
+      {
+        "confidence": 0.079,
+        "id": 794,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T09:30:32Z"
+      },
+      {
+        "confidence": 0.331,
+        "id": 793,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T09:21:54Z"
+      },
+      {
+        "confidence": null,
+        "id": 792,
+        "message": "DEMO: card authorized at front entry",
+        "node_id": "hub",
+        "sensor": "rfid_auth",
+        "severity": "info",
+        "status": "card_authorized",
+        "timestamp": "2026-10-13T09:11:24Z"
+      },
+      {
+        "confidence": 0.715,
+        "id": 791,
+        "message": "DEMO: person confirmed at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "warning",
+        "status": "person_confirmed",
+        "timestamp": "2026-10-13T09:05:12Z"
+      },
+      {
+        "confidence": 0.095,
+        "id": 790,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T08:57:41Z"
+      },
+      {
+        "confidence": 0.312,
+        "id": 789,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T08:56:42Z"
+      },
+      {
+        "confidence": 0.579,
+        "id": 788,
+        "message": "DEMO: person confirmed at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "warning",
+        "status": "person_confirmed",
+        "timestamp": "2026-10-13T08:55:12Z"
+      },
+      {
+        "confidence": 0.168,
+        "id": 787,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T08:53:57Z"
+      },
+      {
+        "confidence": 0.237,
+        "id": 786,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T08:53:28Z"
+      },
+      {
+        "confidence": 0.051,
+        "id": 785,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T08:51:03Z"
+      },
+      {
+        "confidence": null,
+        "id": 784,
+        "message": "DEMO: card authorized at front entry",
+        "node_id": "hub",
+        "sensor": "rfid_auth",
+        "severity": "info",
+        "status": "card_authorized",
+        "timestamp": "2026-10-13T08:50:39Z"
+      },
+      {
+        "confidence": null,
+        "id": 783,
+        "message": "DEMO: card authorized at front entry",
+        "node_id": "hub",
+        "sensor": "rfid_auth",
+        "severity": "info",
+        "status": "card_authorized",
+        "timestamp": "2026-10-13T08:38:41Z"
+      },
+      {
+        "confidence": 0.358,
+        "id": 782,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T08:35:49Z"
+      },
+      {
+        "confidence": 0.147,
+        "id": 781,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T08:27:42Z"
+      }
+    ],
+    "seconds_since_seen": 5.0,
+    "status": "online"
+  },
+  "events": {
+    "events": [
+      {
+        "confidence": 0.602,
+        "id": 800,
+        "message": "DEMO: person confirmed at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "warning",
+        "status": "person_confirmed",
+        "timestamp": "2026-10-13T11:50:35Z"
+      },
+      {
+        "confidence": 0.125,
+        "id": 799,
+        "message": "DEMO: motion no person at front entry",
+        "node_id": "hub",
+        "sensor": "entry_monitor",
+        "severity": "info",
+        "status": "motion_no_person",
+        "timestamp": "2026-10-13T11:46:23Z"
+      }
+    ],
+    "next_cursor": 799,
+    "total_matching": 800
+  },
+  "summary": {
+    "bucket": "hour",
+    "by_sensor": [
+      {
+        "count": 72,
+        "sensor": "entry_monitor"
+      },
+      {
+        "count": 31,
+        "sensor": "rfid_auth"
+      }
+    ],
+    "range": "24h",
+    "series": [
+      {
+        "critical": 0,
+        "info": 1,
+        "t": "2026-10-12T12:00:00Z",
+        "warning": 1
+      },
+      {
+        "critical": 0,
+        "info": 2,
+        "t": "2026-10-12T13:00:00Z",
+        "warning": 0
+      },
+      {
+        "critical": 0,
+        "info": 2,
+        "t": "2026-10-12T14:00:00Z",
+        "warning": 0
+      },
+      {
+        "critical": 0,
+        "info": 0,
+        "t": "2026-10-12T15:00:00Z",
+        "warning": 1
+      },
+      {
+        "critical": 0,
+        "info": 1,
+        "t": "2026-10-12T16:00:00Z",
+        "warning": 0
+      },
+      {
+        "critical": 1,
+        "info": 7,
+        "t": "2026-10-12T17:00:00Z",
+        "warning": 0
+      },
+      {
+        "critical": 0,
+        "info": 3,
+        "t": "2026-10-12T18:00:00Z",
+        "warning": 0
+      },
+      {
+        "critical": 0,
+        "info": 2,
+        "t": "2026-10-12T19:00:00Z",
+        "warning": 3
+      },
+      {
+        "critical": 0,
+        "info": 4,
+        "t": "2026-10-12T20:00:00Z",
+        "warning": 2
+      },
+      {
+        "critical": 0,
+        "info": 6,
+        "t": "2026-10-12T21:00:00Z",
+        "warning": 0
+      },
+      {
+        "critical": 0,
+        "info": 2,
+        "t": "2026-10-12T22:00:00Z",
+        "warning": 3
+      },
+      {
+        "critical": 0,
+        "info": 1,
+        "t": "2026-10-12T23:00:00Z",
+        "warning": 1
+      },
+      {
+        "critical": 0,
+        "info": 2,
+        "t": "2026-10-13T00:00:00Z",
+        "warning": 1
+      },
+      {
+        "critical": 0,
+        "info": 3,
+        "t": "2026-10-13T01:00:00Z",
+        "warning": 1
+      },
+      {
+        "critical": 0,
+        "info": 2,
+        "t": "2026-10-13T02:00:00Z",
+        "warning": 0
+      },
+      {
+        "critical": 0,
+        "info": 1,
+        "t": "2026-10-13T03:00:00Z",
+        "warning": 0
+      },
+      {
+        "critical": 0,
+        "info": 2,
+        "t": "2026-10-13T04:00:00Z",
+        "warning": 0
+      },
+      {
+        "critical": 0,
+        "info": 2,
+        "t": "2026-10-13T05:00:00Z",
+        "warning": 0
+      },
+      {
+        "critical": 0,
+        "info": 10,
+        "t": "2026-10-13T06:00:00Z",
+        "warning": 2
+      },
+      {
+        "critical": 0,
+        "info": 6,
+        "t": "2026-10-13T07:00:00Z",
+        "warning": 3
+      },
+      {
+        "critical": 0,
+        "info": 11,
+        "t": "2026-10-13T08:00:00Z",
+        "warning": 4
+      },
+      {
+        "critical": 0,
+        "info": 6,
+        "t": "2026-10-13T09:00:00Z",
+        "warning": 1
+      },
+      {
+        "critical": 0,
+        "info": 1,
+        "t": "2026-10-13T10:00:00Z",
+        "warning": 0
+      },
+      {
+        "critical": 0,
+        "info": 1,
+        "t": "2026-10-13T11:00:00Z",
+        "warning": 1
+      }
+    ]
+  },
+  "cards": {
+    "cards": [
+      {
+        "active": true,
+        "card_uid": "04A1B2C3",
+        "created_at": "2026-10-06T12:00:00Z",
+        "label": "Dev",
+        "last_seen": "2026-10-13T11:00:00Z",
+        "notes": "Synthetic demo card"
+      },
+      {
+        "active": true,
+        "card_uid": "04B2C3D4",
+        "created_at": "2026-10-06T12:00:00Z",
+        "label": "Family",
+        "last_seen": "2026-10-13T10:00:00Z",
+        "notes": "Synthetic demo card"
+      },
+      {
+        "active": true,
+        "card_uid": "04C3D4E5",
+        "created_at": "2026-10-06T12:00:00Z",
+        "label": "Guest",
+        "last_seen": "2026-10-13T09:00:00Z",
+        "notes": "Synthetic demo card"
+      },
+      {
+        "active": false,
+        "card_uid": "04D4E5F6",
+        "created_at": "2026-10-06T12:00:00Z",
+        "label": "Retired key",
+        "last_seen": "2026-10-13T08:00:00Z",
+        "notes": "Synthetic demo card"
+      }
+    ]
+  },
+  "activity": {
+    "events": [
+      {
+        "confidence": null,
+        "id": 797,
+        "message": "DEMO: card authorized at front entry",
+        "node_id": "hub",
+        "sensor": "rfid_auth",
+        "severity": "info",
+        "status": "card_authorized",
+        "timestamp": "2026-10-13T09:48:33Z"
+      },
+      {
+        "confidence": null,
+        "id": 792,
+        "message": "DEMO: card authorized at front entry",
+        "node_id": "hub",
+        "sensor": "rfid_auth",
+        "severity": "info",
+        "status": "card_authorized",
+        "timestamp": "2026-10-13T09:11:24Z"
+      }
+    ]
+  },
+  "entryStats": {
+    "avg_confidence_confirmed": 0.7370909090909091,
+    "confidence_histogram": [
+      {
+        "bucket": "0.0-0.1",
+        "count": 0
+      },
+      {
+        "bucket": "0.1-0.2",
+        "count": 0
+      },
+      {
+        "bucket": "0.2-0.3",
+        "count": 0
+      },
+      {
+        "bucket": "0.3-0.4",
+        "count": 0
+      },
+      {
+        "bucket": "0.4-0.5",
+        "count": 0
+      },
+      {
+        "bucket": "0.5-0.6",
+        "count": 5
+      },
+      {
+        "bucket": "0.6-0.7",
+        "count": 3
+      },
+      {
+        "bucket": "0.7-0.8",
+        "count": 7
+      },
+      {
+        "bucket": "0.8-0.9",
+        "count": 4
+      },
+      {
+        "bucket": "0.9-1.0",
+        "count": 3
+      }
+    ],
+    "motion_no_person": 50,
+    "persons_confirmed": 22,
+    "range": "24h",
+    "series": [
+      {
+        "motion_no_person": 1,
+        "person_confirmed": 1,
+        "t": "2026-10-12T12:00:00Z"
+      },
+      {
+        "motion_no_person": 2,
+        "person_confirmed": 0,
+        "t": "2026-10-12T13:00:00Z"
+      },
+      {
+        "motion_no_person": 2,
+        "person_confirmed": 0,
+        "t": "2026-10-12T14:00:00Z"
+      },
+      {
+        "motion_no_person": 0,
+        "person_confirmed": 1,
+        "t": "2026-10-12T15:00:00Z"
+      },
+      {
+        "motion_no_person": 0,
+        "person_confirmed": 0,
+        "t": "2026-10-12T16:00:00Z"
+      },
+      {
+        "motion_no_person": 4,
+        "person_confirmed": 1,
+        "t": "2026-10-12T17:00:00Z"
+      },
+      {
+        "motion_no_person": 3,
+        "person_confirmed": 0,
+        "t": "2026-10-12T18:00:00Z"
+      },
+      {
+        "motion_no_person": 0,
+        "person_confirmed": 3,
+        "t": "2026-10-12T19:00:00Z"
+      },
+      {
+        "motion_no_person": 3,
+        "person_confirmed": 2,
+        "t": "2026-10-12T20:00:00Z"
+      },
+      {
+        "motion_no_person": 4,
+        "person_confirmed": 0,
+        "t": "2026-10-12T21:00:00Z"
+      },
+      {
+        "motion_no_person": 1,
+        "person_confirmed": 2,
+        "t": "2026-10-12T22:00:00Z"
+      },
+      {
+        "motion_no_person": 1,
+        "person_confirmed": 1,
+        "t": "2026-10-12T23:00:00Z"
+      },
+      {
+        "motion_no_person": 2,
+        "person_confirmed": 0,
+        "t": "2026-10-13T00:00:00Z"
+      },
+      {
+        "motion_no_person": 0,
+        "person_confirmed": 1,
+        "t": "2026-10-13T01:00:00Z"
+      },
+      {
+        "motion_no_person": 2,
+        "person_confirmed": 0,
+        "t": "2026-10-13T02:00:00Z"
+      },
+      {
+        "motion_no_person": 0,
+        "person_confirmed": 0,
+        "t": "2026-10-13T03:00:00Z"
+      },
+      {
+        "motion_no_person": 1,
+        "person_confirmed": 0,
+        "t": "2026-10-13T04:00:00Z"
+      },
+      {
+        "motion_no_person": 0,
+        "person_confirmed": 0,
+        "t": "2026-10-13T05:00:00Z"
+      },
+      {
+        "motion_no_person": 6,
+        "person_confirmed": 2,
+        "t": "2026-10-13T06:00:00Z"
+      },
+      {
+        "motion_no_person": 4,
+        "person_confirmed": 3,
+        "t": "2026-10-13T07:00:00Z"
+      },
+      {
+        "motion_no_person": 8,
+        "person_confirmed": 3,
+        "t": "2026-10-13T08:00:00Z"
+      },
+      {
+        "motion_no_person": 4,
+        "person_confirmed": 1,
+        "t": "2026-10-13T09:00:00Z"
+      },
+      {
+        "motion_no_person": 1,
+        "person_confirmed": 0,
+        "t": "2026-10-13T10:00:00Z"
+      },
+      {
+        "motion_no_person": 1,
+        "person_confirmed": 1,
+        "t": "2026-10-13T11:00:00Z"
+      }
+    ]
+  },
+  "system": {
+    "db": {
+      "cards": 4,
+      "devices": 3,
+      "events": 800,
+      "path_basename": "fixture.db",
+      "size_bytes": 172032
+    },
+    "mode": "demo",
+    "mqtt_connected": null,
+    "node_id": "hub",
+    "stale_after_seconds": 90,
+    "uptime_seconds": 0.0
+  },
+  "event": {
+    "confidence": 0.602,
+    "id": 800,
+    "message": "DEMO: person confirmed at front entry",
+    "node_id": "hub",
+    "sensor": "entry_monitor",
+    "severity": "warning",
+    "status": "person_confirmed",
+    "timestamp": "2026-10-13T11:50:35Z"
+  },
+  "device": {
+    "capabilities": ["pir", "camera", "entry_monitor", "rfid"],
+    "effective_status": "online",
+    "last_seen": "2026-10-13T11:59:55Z",
+    "node_id": "hub",
+    "seconds_since_seen": 5.0,
+    "status": "online"
+  },
+  "card": {
+    "active": true,
+    "card_uid": "04A1B2C3",
+    "created_at": "2026-10-06T12:00:00Z",
+    "label": "Dev",
+    "last_seen": "2026-10-13T11:00:00Z",
+    "notes": "Synthetic demo card"
+  },
+  "error": {
+    "error": {
+      "code": "unauthorized",
+      "message": "Valid dashboard credentials are required."
+    }
+  }
+}

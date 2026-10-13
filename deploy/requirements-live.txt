@@ -1,0 +1,5 @@
+# GPIO, camera, OpenCV and NumPy come from Raspberry Pi OS system packages.
+# Use a virtual environment created with --system-site-packages.
+flask==3.0.3
+paho-mqtt==1.6.1
+ai-edge-litert
