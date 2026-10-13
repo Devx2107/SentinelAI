@@ -1,0 +1,2135 @@
+From 7e6190752283dde7f8cfbda54d26a1705bce3e15 Mon Sep 17 00:00:00 2001
+From: Devx2107 <manchandadeva@gmail.com>
+Date: Tue, 13 Oct 2026 09:38:54 +0530
+Subject: [PATCH] feat(dashboard): add isolated v2 REST API and seeded
+ development runner
+
+Keep v1 and hardware components unchanged while adding app-scoped queries, atomic card management, explicit provider seams, and contract coverage. Record reviewed plan refinements and verify the off-device workflow.
+---
+ dashboard-ui/src/api/schema/responses.json | 666 +++++++++++++++++++++
+ docs/dashboard-v2-review.md                |  43 ++
+ docs/dashboard-v2.md                       | 125 ++++
+ hub/api/__init__.py                        |   1 +
+ hub/api/auth.py                            |  29 +
+ hub/api/v1.py                              | 140 +++++
+ hub/app.py                                 |   2 +
+ hub/dashboard_dev.py                       |  48 ++
+ hub/database/queries/__init__.py           |   1 +
+ hub/database/queries/events_query.py       |  49 ++
+ hub/services/__init__.py                   |   1 +
+ hub/services/common.py                     |  79 +++
+ hub/services/devices.py                    |  35 ++
+ hub/services/events.py                     |   5 +
+ hub/services/overview.py                   |  19 +
+ hub/services/providers.py                  |  90 +++
+ hub/services/rfid.py                       |  69 +++
+ hub/services/stats.py                      |  58 ++
+ hub/services/system.py                     |   9 +
+ hub/tests/test_api_v1.py                   | 291 +++++++++
+ hub/tests/test_api_v1_contract.py          |  81 +++
+ hub/tools/__init__.py                      |   1 +
+ hub/tools/seed_demo_data.py                |  74 +++
+ pytest.ini                                 |   3 +
+ 24 files changed, 1919 insertions(+)
+ create mode 100644 dashboard-ui/src/api/schema/responses.json
+ create mode 100644 docs/dashboard-v2-review.md
+ create mode 100644 docs/dashboard-v2.md
+ create mode 100644 hub/api/__init__.py
+ create mode 100644 hub/api/auth.py
+ create mode 100644 hub/api/v1.py
+ create mode 100644 hub/dashboard_dev.py
+ create mode 100644 hub/database/queries/__init__.py
+ create mode 100644 hub/database/queries/events_query.py
+ create mode 100644 hub/services/__init__.py
+ create mode 100644 hub/services/common.py
+ create mode 100644 hub/services/devices.py
+ create mode 100644 hub/services/events.py
+ create mode 100644 hub/services/overview.py
+ create mode 100644 hub/services/providers.py
+ create mode 100644 hub/services/rfid.py
+ create mode 100644 hub/services/stats.py
+ create mode 100644 hub/services/system.py
+ create mode 100644 hub/tests/test_api_v1.py
+ create mode 100644 hub/tests/test_api_v1_contract.py
+ create mode 100644 hub/tools/__init__.py
+ create mode 100644 hub/tools/seed_demo_data.py
+ create mode 100644 pytest.ini
+
+diff --git a/dashboard-ui/src/api/schema/responses.json b/dashboard-ui/src/api/schema/responses.json
+new file mode 100644
+index 0000000..6b355c8
+--- /dev/null
++++ b/dashboard-ui/src/api/schema/responses.json
+@@ -0,0 +1,666 @@
++{
++  "$schema": "https://json-schema.org/draft/2020-12/schema",
++  "$defs": {
++    "event": {
++      "type": "object",
++      "properties": {
++        "id": {
++          "type": "integer"
++        },
++        "timestamp": {
++          "type": "string"
++        },
++        "node_id": {
++          "type": "string"
++        },
++        "sensor": {
++          "type": "string"
++        },
++        "status": {
++          "type": "string"
++        },
++        "severity": {
++          "type": "string"
++        },
++        "confidence": {
++          "anyOf": [
++            {
++              "type": "number"
++            },
++            {
++              "type": "null"
++            }
++          ]
++        },
++        "message": {
++          "type": "string"
++        }
++      },
++      "required": [
++        "id",
++        "timestamp",
++        "node_id",
++        "sensor",
++        "status",
++        "severity",
++        "confidence",
++        "message"
++      ],
++      "additionalProperties": false
++    },
++    "device": {
++      "type": "object",
++      "properties": {
++        "node_id": {
++          "type": "string"
++        },
++        "status": {
++          "type": "string"
++        },
++        "effective_status": {
++          "enum": [
++            "online",
++            "stale",
++            "offline"
++          ]
++        },
++        "last_seen": {
++          "anyOf": [
++            {
++              "type": "string"
++            },
++            {
++              "type": "null"
++            }
++          ]
++        },
++        "seconds_since_seen": {
++          "anyOf": [
++            {
++              "type": "number"
++            },
++            {
++              "type": "null"
++            }
++          ]
++        },
++        "capabilities": {
++          "type": "array",
++          "items": {
++            "type": "string"
++          }
++        }
++      },
++      "required": [
++        "node_id",
++        "status",
++        "effective_status",
++        "last_seen",
++        "seconds_since_seen",
++        "capabilities"
++      ],
++      "additionalProperties": false
++    },
++    "card": {
++      "type": "object",
++      "properties": {
++        "card_uid": {
++          "type": "string"
++        },
++        "label": {
++          "type": "string"
++        },
++        "active": {
++          "type": "boolean"
++        },
++        "notes": {
++          "anyOf": [
++            {
++              "type": "string"
++            },
++            {
++              "type": "null"
++            }
++          ]
++        },
++        "created_at": {
++          "type": "string"
++        },
++        "last_seen": {
++          "anyOf": [
++            {
++              "type": "string"
++            },
++            {
++              "type": "null"
++            }
++          ]
++        }
++      },
++      "required": [
++        "card_uid",
++        "label",
++        "active",
++        "notes",
++        "created_at",
++        "last_seen"
++      ],
++      "additionalProperties": false
++    },
++    "health": {
++      "type": "object",
++      "properties": {
++        "status": {
++          "enum": [
++            "ok",
++            "degraded"
++          ]
++        },
++        "node_id": {
++          "type": "string"
++        },
++        "uptime_seconds": {
++          "type": "number"
++        },
++        "db_ok": {
++          "type": "boolean"
++        },
++        "version": {
++          "const": "dashboard-v2"
++        }
++      },
++      "required": [
++        "status",
++        "node_id",
++        "uptime_seconds",
++        "db_ok",
++        "version"
++      ],
++      "additionalProperties": false
++    },
++    "overview": {
++      "type": "object",
++      "properties": {
++        "hub": {
++          "type": "object",
++          "properties": {
++            "node_id": {
++              "type": "string"
++            },
++            "uptime_seconds": {
++              "type": "number"
++            }
++          },
++          "required": [
++            "node_id",
++            "uptime_seconds"
++          ],
++          "additionalProperties": false
++        },
++        "counts": {
++          "type": "object",
++          "properties": {
++            "devices_total": {
++              "type": "integer"
++            },
++            "devices_online": {
++              "type": "integer"
++            },
++            "devices_stale": {
++              "type": "integer"
++            },
++            "devices_offline": {
++              "type": "integer"
++            },
++            "events_24h": {
++              "type": "integer"
++            },
++            "warnings_24h": {
++              "type": "integer"
++            },
++            "critical_24h": {
++              "type": "integer"
++            },
++            "persons_confirmed_24h": {
++              "type": "integer"
++            },
++            "cards_denied_24h": {
++              "type": "integer"
++            }
++          },
++          "required": [
++            "devices_total",
++            "devices_online",
++            "devices_stale",
++            "devices_offline",
++            "events_24h",
++            "warnings_24h",
++            "critical_24h",
++            "persons_confirmed_24h",
++            "cards_denied_24h"
++          ],
++          "additionalProperties": false
++        },
++        "auth_window": {
++          "anyOf": [
++            {
++              "type": "object",
++              "properties": {
++                "active": {
++                  "type": "boolean"
++                },
++                "card_uid": {
++                  "type": "string"
++                },
++                "card_label": {
++                  "type": "string"
++                },
++                "expires_at": {
++                  "type": "string"
++                }
++              },
++              "required": [
++                "active",
++                "card_uid",
++                "card_label",
++                "expires_at"
++              ],
++              "additionalProperties": false
++            },
++            {
++              "type": "null"
++            }
++          ]
++        },
++        "latest_events": {
++          "type": "array",
++          "items": {
++            "$ref": "#/$defs/event"
++          }
++        }
++      },
++      "required": [
++        "hub",
++        "counts",
++        "auth_window",
++        "latest_events"
++      ],
++      "additionalProperties": false
++    },
++    "devices": {
++      "type": "object",
++      "properties": {
++        "devices": {
++          "type": "array",
++          "items": {
++            "$ref": "#/$defs/device"
++          }
++        }
++      },
++      "required": [
++        "devices"
++      ],
++      "additionalProperties": false
++    },
++    "deviceDetail": {
++      "type": "object",
++      "properties": {
++        "node_id": {
++          "type": "string"
++        },
++        "status": {
++          "type": "string"
++        },
++        "effective_status": {
++          "enum": [
++            "online",
++            "stale",
++            "offline"
++          ]
++        },
++        "last_seen": {
++          "anyOf": [
++            {
++              "type": "string"
++            },
++            {
++              "type": "null"
++            }
++          ]
++        },
++        "seconds_since_seen": {
++          "anyOf": [
++            {
++              "type": "number"
++            },
++            {
++              "type": "null"
++            }
++          ]
++        },
++        "capabilities": {
++          "type": "array",
++          "items": {
++            "type": "string"
++          }
++        },
++        "recent_events": {
++          "type": "array",
++          "items": {
++            "$ref": "#/$defs/event"
++          }
++        }
++      },
++      "required": [
++        "node_id",
++        "status",
++        "effective_status",
++        "last_seen",
++        "seconds_since_seen",
++        "capabilities",
++        "recent_events"
++      ],
++      "additionalProperties": false
++    },
++    "events": {
++      "type": "object",
++      "properties": {
++        "events": {
++          "type": "array",
++          "items": {
++            "$ref": "#/$defs/event"
++          }
++        },
++        "next_cursor": {
++          "anyOf": [
++            {
++              "type": "integer"
++            },
++            {
++              "type": "null"
++            }
++          ]
++        },
++        "total_matching": {
++          "type": "integer"
++        }
++      },
++      "required": [
++        "events",
++        "next_cursor",
++        "total_matching"
++      ],
++      "additionalProperties": false
++    },
++    "summary": {
++      "type": "object",
++      "properties": {
++        "range": {
++          "enum": [
++            "24h",
++            "7d"
++          ]
++        },
++        "bucket": {
++          "enum": [
++            "hour",
++            "day"
++          ]
++        },
++        "series": {
++          "type": "array",
++          "items": {
++            "type": "object",
++            "properties": {
++              "t": {
++                "type": "string"
++              },
++              "info": {
++                "type": "integer"
++              },
++              "warning": {
++                "type": "integer"
++              },
++              "critical": {
++                "type": "integer"
++              }
++            },
++            "required": [
++              "t",
++              "info",
++              "warning",
++              "critical"
++            ],
++            "additionalProperties": false
++          }
++        },
++        "by_sensor": {
++          "type": "array",
++          "items": {
++            "type": "object",
++            "properties": {
++              "sensor": {
++                "type": "string"
++              },
++              "count": {
++                "type": "integer"
++              }
++            },
++            "required": [
++              "sensor",
++              "count"
++            ],
++            "additionalProperties": false
++          }
++        }
++      },
++      "required": [
++        "range",
++        "bucket",
++        "series",
++        "by_sensor"
++      ],
++      "additionalProperties": false
++    },
++    "cards": {
++      "type": "object",
++      "properties": {
++        "cards": {
++          "type": "array",
++          "items": {
++            "$ref": "#/$defs/card"
++          }
++        }
++      },
++      "required": [
++        "cards"
++      ],
++      "additionalProperties": false
++    },
++    "activity": {
++      "type": "object",
++      "properties": {
++        "events": {
++          "type": "array",
++          "items": {
++            "$ref": "#/$defs/event"
++          }
++        }
++      },
++      "required": [
++        "events"
++      ],
++      "additionalProperties": false
++    },
++    "entryStats": {
++      "type": "object",
++      "properties": {
++        "range": {
++          "enum": [
++            "24h",
++            "7d"
++          ]
++        },
++        "persons_confirmed": {
++          "type": "integer"
++        },
++        "motion_no_person": {
++          "type": "integer"
++        },
++        "avg_confidence_confirmed": {
++          "anyOf": [
++            {
++              "type": "number"
++            },
++            {
++              "type": "null"
++            }
++          ]
++        },
++        "confidence_histogram": {
++          "type": "array",
++          "items": {
++            "type": "object",
++            "properties": {
++              "bucket": {
++                "type": "string"
++              },
++              "count": {
++                "type": "integer"
++              }
++            },
++            "required": [
++              "bucket",
++              "count"
++            ],
++            "additionalProperties": false
++          }
++        },
++        "series": {
++          "type": "array",
++          "items": {
++            "type": "object",
++            "properties": {
++              "t": {
++                "type": "string"
++              },
++              "person_confirmed": {
++                "type": "integer"
++              },
++              "motion_no_person": {
++                "type": "integer"
++              }
++            },
++            "required": [
++              "t",
++              "person_confirmed",
++              "motion_no_person"
++            ],
++            "additionalProperties": false
++          }
++        }
++      },
++      "required": [
++        "range",
++        "persons_confirmed",
++        "motion_no_person",
++        "avg_confidence_confirmed",
++        "confidence_histogram",
++        "series"
++      ],
++      "additionalProperties": false
++    },
++    "system": {
++      "type": "object",
++      "properties": {
++        "node_id": {
++          "type": "string"
++        },
++        "uptime_seconds": {
++          "type": "number"
++        },
++        "db": {
++          "type": "object",
++          "properties": {
++            "path_basename": {
++              "type": "string"
++            },
++            "size_bytes": {
++              "type": "integer"
++            },
++            "events": {
++              "type": "integer"
++            },
++            "devices": {
++              "type": "integer"
++            },
++            "cards": {
++              "type": "integer"
++            }
++          },
++          "required": [
++            "path_basename",
++            "size_bytes",
++            "events",
++            "devices",
++            "cards"
++          ],
++          "additionalProperties": false
++        },
++        "mqtt_connected": {
++          "anyOf": [
++            {
++              "type": "boolean"
++            },
++            {
++              "type": "null"
++            }
++          ]
++        },
++        "stale_after_seconds": {
++          "type": "integer"
++        },
++        "mode": {
++          "enum": [
++            "demo",
++            "live"
++          ]
++        }
++      },
++      "required": [
++        "node_id",
++        "uptime_seconds",
++        "db",
++        "mqtt_connected",
++        "stale_after_seconds",
++        "mode"
++      ],
++      "additionalProperties": false
++    },
++    "error": {
++      "type": "object",
++      "properties": {
++        "error": {
++          "type": "object",
++          "properties": {
++            "code": {
++              "type": "string"
++            },
++            "message": {
++              "type": "string"
++            }
++          },
++          "required": [
++            "code",
++            "message"
++          ],
++          "additionalProperties": false
++        }
++      },
++      "required": [
++        "error"
++      ],
++      "additionalProperties": false
++    }
++  }
++}
+diff --git a/docs/dashboard-v2-review.md b/docs/dashboard-v2-review.md
+new file mode 100644
+index 0000000..c178ad5
+--- /dev/null
++++ b/docs/dashboard-v2-review.md
+@@ -0,0 +1,43 @@
++# Dashboard v2 plan review and refinements
++
++Reviewed 2026-10-13 against the provided `DASHBOARD_V2_PLAN.md` and fetched refs.
++
++## Phase 0 audit
++
++- `origin/main`: `893427b31dffedfdf119a3f5a133d59df48d1db3`; lacks dashboard v1, RFID and node_agent.
++- Required features exist on `origin/feature/phase4-rfid-auth` at `b5b44854aec8b30b08ee3c8dbc43176807549a88`.
++- The user authorized an isolated checkout of that branch. Current working changes on main are preserved. The dashboard branch starts at this exact RFID commit, not origin/main.
++- `hub/database/sentinelai.db` is tracked on the RFID branch. Do not open it for demo/tests or include it in the patch.
++- The original checkout's prior reliability work modifies protected files. It is not carried into this checkout or this patch.
++- A bare core-only environment cannot collect the unchanged vision tests: they import NumPy before skipping the optional runtime. Install the existing `numpy==1.26.4` dependency on Python 3.11; no test edits are needed.
++- With the existing dependency pins installed, the baseline hub suite passed 11 tests with 1 optional-vision skip; the node-agent suite passed 1 test.
++
++## Revised implementation decisions
++
++1. Preserve the original phase boundaries and protected-file list. This delivery implements Phase 1 only. Pi integration remains separately authorized Phase 8.
++2. Use a recorded base commit for each patch. Later phases build on the preceding accepted phase; repeatedly branching from an unchanged main would lose their prerequisites. Do not generate this patch against origin/main because that would accidentally include the entire RFID branch.
++3. Services use an explicit app-scoped `Store` rather than mutating imported global database configuration. The schema is unchanged and comes from the existing schema definition when creating demo databases. Existing paths are opened in read/write-existing mode so typos do not silently create empty live databases.
++4. Demo seeding exclusively creates a NEW file and rejects existing paths, especially the committed DB. Default runner data lives in a temporary directory with cleanup on exit. RNG plus an injected reference time makes fixtures reproducible. Synthetic critical events are clearly tagged DEMO.
++5. POST RFID uses an atomic INSERT and translates duplicate-UID constraints to 409. PATCH only updates submitted allowlisted fields in one transaction, preserving creation/last-seen fields. This intentionally replaces the plan's proposed use of `get_known_card` + `upsert_known_card`: that combination races and can overwrite concurrent changes. Existing model files remain untouched.
++6. Define event ranges as `since <= timestamp < until`, require explicit timezone offsets, and convert timestamps for comparisons rather than comparing raw strings. IDs order pagination. `total_matching` counts all filtered matches independently of cursor, and `next_cursor` exists only when another row exists. Text search treats `%` and `_` literally (SQLite's built-in case folding is ASCII).
++7. Rolling summaries include partial first/last UTC calendar buckets; a 24-hour range can span 25 hourly buckets. Zero-fill all intersecting buckets. Entry histograms include confirmed-person confidences across ten bins from 0 to 1; bins are left-inclusive/right-exclusive except the final bin includes 1.0. This avoids dropping valid low-confidence detections if the configured threshold changes. Empty average confidence is null.
++8. Unknown/malformed last-seen values on online devices are stale; negative clock skew clamps age to zero. This is a read-time view and never updates device rows. Stale alone does not become offline without a producer publishing that state.
++9. Move constant-time auth, same-origin JSON-only writes, body limits, no-store and basic response headers into Phase 1. Future rate limiting/CSP remain Phase 7. No credentials, full DB paths or internal errors appear in responses. Health is unauthenticated, returns 503/degraded when the DB cannot be read; protected hub routes return 503 until providers are wired, not fake demo state.
++10. Phase 3 must establish same-origin browser Basic auth before opening native EventSource: it cannot attach arbitrary Authorization headers. Protect the SPA navigation with the same realm or use a fetch-based stream; never put credentials in URLs or localStorage. The Vite proxy must share that origin.
++11. Phase 2 must capture the initial max event ID before yielding the first SSE chunk; reconnects use validated Last-Event-ID. Only event rows carry an SSE id. Reserve/release the stream cap under a lock, including early client disconnects. The demo generator belongs to app lifetime, not each connection; do not stop a shared generator when one subscriber disconnects.
++12. Use a JSON-schema subset with a standard-library test validator in Phase 1 (no added Python dependency). Phase 3 adds TypeScript runtime-guard parity and the frontend runner. The plan's hourly-warning banner needs an explicit hourly count contract before it can be implemented; 24-hour warnings cannot stand in for it.
++13. The frontend whitelist omits React TypeScript declarations. Resolve whether to add `@types/react` / `@types/react-dom` before Phase 3 rather than silently substituting untyped declarations. Lighthouse and live-Pi measurements must be recorded from actual runs, never estimated.
++
++## Delivery boundaries
++
++Phase 1 ships REST, providers, seed tool, runner, backend contract fixtures/tests and docs.
++It does not ship the SPA, SSE, generator thread, live provider wiring, deployment or hardware changes.
++The original external plan is preserved; this document records its reviewed refinements.
++
++## Phase 1 verification
++
++- Combined suites: 63 passed, 1 skipped on Python 3.11. The skipped module requires the optional vision runtime. The original tests are unchanged.
++- A real subprocess running `python hub/dashboard_dev.py` served health and authenticated overview, events, summary, device, entry stats and system responses over loopback HTTP. Card create returned 201 and disable returned 200.
++- A fresh-interpreter test proves the demo imports no modules.*, MQTT client, module loader, paho, gpiozero, picamera2 or ai_edge_litert.
++- Protected-file diff: only `hub/app.py` changed, by the allowed one import and one blueprint registration. The tracked database has no Git changes.
++- Schema contract checks cover every Phase 1 endpoint. TypeScript/browser tests, SSE, Lighthouse and hardware checks belong to later phases and were not run.
+diff --git a/docs/dashboard-v2.md b/docs/dashboard-v2.md
+new file mode 100644
+index 0000000..ff6f063
+--- /dev/null
++++ b/docs/dashboard-v2.md
+@@ -0,0 +1,125 @@
++# Dashboard v2: Phase 1 backend
++
++This phase adds an authenticated REST API and an isolated, seeded demo runner.
++The existing dashboard at `/dashboard` is preserved. The React application at
++`/app/` and live SSE feed are later phases, not part of this delivery.
++
++## Run locally without hardware
++
++Use Python 3.11 (the existing NumPy pin supports it). From this checkout:
++
++```powershell
++py -3.11 -m venv .venv
++.\.venv\Scripts\python -m pip install flask==3.0.3 pytest==8.2.2 numpy==1.26.4
++.\.venv\Scripts\python -m pytest -q
++.\.venv\Scripts\python hub/dashboard_dev.py
++```
++
++On Linux/macOS use `python3.11 -m venv .venv` and `.venv/bin/python` in place
++of the Windows commands. Only existing dependency names/versions are used.
++NumPy is required by the unchanged legacy test module, not by the dashboard.
++No paho, camera, GPIO, LiteRT, broker or hardware is required.
++
++In another terminal:
++
++```powershell
++curl.exe -u admin:dev http://127.0.0.1:5001/api/v1/overview
++curl.exe -u admin:dev "http://127.0.0.1:5001/api/v1/events?limit=10&severity=warning,critical"
++```
++
++The runner binds only to loopback. `admin` / `dev` defaults exist only in the
++dev runner. Override with `SENTINELAI_DASHBOARD_USER` and
++`SENTINELAI_DASHBOARD_PASSWORD`; empty credentials produce a clear 500 error.
++The default database is new, temporary and seeded with 800 events, 3 devices
++and 4 synthetic cards. It is cleaned up when the runner exits normally.
++Device ages continue advancing; without Phase 2's generator, demo online
++devices become stale after 90 seconds. This is expected, not a live heartbeat.
++
++`SENTINELAI_DB_PATH` may point to a **new** file; existing files are refused,
++including the committed hub DB. The runner never deletes a user-specified
++file. To preserve a deterministic sample explicitly:
++
++```powershell
++.\.venv\Scripts\python hub/tools/seed_demo_data.py ./sample-demo.db --as-of 2026-10-13T12:00:00Z
++```
++
++The seed command also refuses to overwrite. An injected reference time and
++RNG seed reproduce data. `SENTINELAI_STALE_AFTER_SECONDS` defaults to 90 and
++accepts positive integers up to 86400. `SENTINELAI_NODE_ID` defaults to `hub`.
++
++## Architecture and contract
++
++`hub/api/v1.py` handles Flask transport and auth. Pure Python services receive
++`app.extensions['sentinel_providers']`: per-app Store, clock, authorization
++window, connection status and database event source. Connections close after
++each query/transaction. Live adapters accept injected objects/callables and
++remain unwired; nothing imports hardware from the demo graph.
++
++The new blueprint is registered in `hub/app.py` with exactly one import and
++one registration. Until Phase 8 supplies live providers, its v2 routes return
++503 (after authentication). Dashboard v1 remains functional and unchanged.
++
++The machine-readable response contract is
++[`responses.json`](../dashboard-ui/src/api/schema/responses.json), with a
++strict subset validator in the backend tests. The reviewed refinements to the
++external plan are in [dashboard-v2-review.md](dashboard-v2-review.md).
++
++All protected endpoints use HTTP Basic auth. Errors use
++`{"error":{"code":"...","message":"..."}}`. Requests are not cached.
++Writes require same-origin JSON, are limited to 16 KiB, and validate field
++types. UID normalization strips outer whitespace and uppercases hex; the
++regex is `^[0-9A-F]{8,20}$`. No separators are removed. Labels are trimmed,
++1–40 characters; notes are null or at most 2000 characters. Active must be
++a JSON boolean. Unsupported fields are rejected.
++
++| Route | Response / behavior |
++| --- | --- |
++| GET `/api/v1/health` | Public status, node ID, uptime, DB availability, version; 503 when unavailable |
++| GET `/api/v1/overview` | Hub, 24h counts, effective device counts, auth window, latest 10 events |
++| GET `/api/v1/devices` | Devices with effective status and age |
++| GET `/api/v1/devices/<node_id>` | Device plus latest 20 node events; 404 if absent |
++| GET `/api/v1/events` | Events, next_cursor, total_matching |
++| GET `/api/v1/events/summary` | Zero-filled severity series and sensor totals |
++| GET `/api/v1/rfid/cards` | Known cards |
++| POST `/api/v1/rfid/cards` | Create UID/label/optional notes; 201 or atomic duplicate 409 |
++| PATCH `/api/v1/rfid/cards/<uid>` | Update only label, notes, active; no deletion |
++| GET `/api/v1/rfid/activity` | RFID events; limit 1–200, default 50 |
++| GET `/api/v1/entry-monitor/stats` | Counts, mean confirmed confidence, histogram, time series |
++| GET `/api/v1/system` | Counts, DB basename/size, uptime, mode, MQTT availability |
++
++Events accept `limit` (1–200, default 50), `cursor` (positive ID), `sensor`,
++`node_id`, comma lists `severity`/`status`, timezone-aware `since`/`until`,
++and `q` (literal case-insensitive ASCII substring, max 500 characters).
++Date ranges are half-open: since inclusive, until exclusive. Offset and Z
++timestamps compare as instants. Results order by ID descending; counts ignore
++the cursor. `next_cursor` is null only when there are no more matching rows.
++Counts and page use the same SQLite read snapshot.
++
++Summary accepts `range=24h|7d` and `bucket=hour|day`; entry stats accepts
++`range=24h|7d`. Buckets use UTC; timestamps on Event records are unchanged.
++Rolling windows include partial first/last calendar buckets. Histogram bins
++span 0–1 for confirmed events, include 1.0 in the final bin, and exclude null
++confidence. Empty averages are null. No status inference writes to the DB.
++
++## Verification and future work
++
++Run `python -m pytest -q` for both suites. New tests exercise auth, contract
++shapes, filter injection, timezone bounds, pagination, stale status, concurrent
++card creation, histogram edges, seeding safety, app isolation and import safety.
++Real HTTP smoke checks supplement the Flask test-client suite.
++
++Phases 2–7 add SSE, the SPA, management UI, analytics charts and final hardening.
++Frontend TypeScript runtime checks must reuse this schema and seed reference
++time. No accessibility score or frontend bundle size is claimed in Phase 1.
++
++Pi integration readiness checklist (Phase 8 only):
++
++- Obtain explicit authorization to wire the actual auth-state/MQTT providers.
++- Keep demo generator disabled and confirm the existing DB schema.
++- Validate reader/writer load and SQLite contention before proposing WAL.
++- Measure a 30-minute SSE session, memory/CPU and stream caps on hardware.
++- Verify real PIR/RFID events and producer-driven offline states from a phone.
++- Keep v1 available until its retirement is separately approved.
++
++Arm/disarm, commands, snapshots, accounts, acknowledgements, remote access and
++unsupported sensor pages remain out of scope.
+diff --git a/hub/api/__init__.py b/hub/api/__init__.py
+new file mode 100644
+index 0000000..8ba16cd
+--- /dev/null
++++ b/hub/api/__init__.py
+@@ -0,0 +1 @@
++"""Versioned dashboard HTTP API."""
+diff --git a/hub/api/auth.py b/hub/api/auth.py
+new file mode 100644
+index 0000000..1c777cc
+--- /dev/null
++++ b/hub/api/auth.py
+@@ -0,0 +1,29 @@
++"""Basic auth for v2, independent of v1 private helpers."""
++import hmac
++import os
++from flask import current_app, request
++from services.common import ServiceError
++
++
++def require_auth():
++    # Overrides are supplied only by the standalone demo app factory.
++    user = current_app.config.get('DASHBOARD_USER', os.getenv('SENTINELAI_DASHBOARD_USER'))
++    password = current_app.config.get('DASHBOARD_PASSWORD', os.getenv('SENTINELAI_DASHBOARD_PASSWORD'))
++    if not user or not password:
++        raise ServiceError('auth_not_configured', 'Dashboard credentials are not configured.', 500)
++    auth = request.authorization
++    valid_user = hmac.compare_digest((auth.username or '').encode(), user.encode()) if auth else False
++    valid_password = hmac.compare_digest((auth.password or '').encode(), password.encode()) if auth else False
++    if not auth or auth.type.lower() != 'basic' or not (valid_user & valid_password):
++        raise ServiceError('unauthorized', 'Valid dashboard credentials are required.', 401)
++    if request.method in ('POST', 'PATCH'):
++        # Basic auth is ambient browser authority. Reject cross-origin writes.
++        origin = request.headers.get('Origin')
++        if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
++            raise ServiceError('forbidden_origin', 'Cross-origin writes are not allowed.', 403)
++        if request.headers.get('Sec-Fetch-Site') == 'cross-site':
++            raise ServiceError('forbidden_origin', 'Cross-site writes are not allowed.', 403)
++        if not request.is_json:
++            raise ServiceError('invalid_body', 'Content-Type must be application/json.', 415)
++        if request.content_length is not None and request.content_length > 16384:
++            raise ServiceError('request_too_large', 'Card requests are limited to 16 KiB.', 413)
+diff --git a/hub/api/v1.py b/hub/api/v1.py
+new file mode 100644
+index 0000000..a870898
+--- /dev/null
++++ b/hub/api/v1.py
+@@ -0,0 +1,140 @@
++"""Dashboard v2 REST routes. Hardware/live providers are never imported here."""
++import sqlite3
++from flask import Blueprint, current_app, jsonify, request
++from werkzeug.exceptions import HTTPException
++
++from api.auth import require_auth
++from services.common import ServiceError
++from services.devices import get_device, list_devices
++from services.events import list_events
++from services.overview import overview
++from services.rfid import create_card, list_cards, patch_card
++from services.stats import entry_stats, event_summary
++from services.system import system_status
++
++api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
++
++
++def providers():
++    value = current_app.extensions.get('sentinel_providers')
++    if value is None:
++        raise ServiceError('providers_unavailable', 'Dashboard providers are not configured; use the demo runner until live integration.', 503)
++    return value
++
++
++@api_v1.before_request
++def authenticate():
++    if request.endpoint != 'api_v1.health':
++        require_auth()
++
++
++@api_v1.after_request
++def response_headers(response):
++    response.headers['Cache-Control'] = 'no-store'
++    response.headers['X-Content-Type-Options'] = 'nosniff'
++    response.headers['Referrer-Policy'] = 'no-referrer'
++    response.headers['X-Frame-Options'] = 'DENY'
++    return response
++
++
++@api_v1.errorhandler(ServiceError)
++def service_error(error):
++    response = jsonify(error={'code': error.code, 'message': error.message})
++    response.status_code = error.status
++    if error.status == 401:
++        response.headers['WWW-Authenticate'] = 'Basic realm="SentinelAI Dashboard", charset="UTF-8"'
++    return response
++
++
++@api_v1.errorhandler(sqlite3.Error)
++def database_error(error):
++    current_app.logger.warning('Dashboard database unavailable: %s', type(error).__name__)
++    return service_error(ServiceError('database_unavailable', 'Dashboard database is unavailable.', 503))
++
++
++@api_v1.errorhandler(HTTPException)
++def http_error(error):
++    return service_error(ServiceError('invalid_request', error.name, error.code))
++
++
++@api_v1.get('/health')
++def health():
++    p = providers()
++    try:
++        p.store.rows('SELECT id FROM events LIMIT 1')
++        db_ok = True
++    except sqlite3.Error:
++        db_ok = False
++    return jsonify(status='ok' if db_ok else 'degraded', node_id=p.node_id,
++                   uptime_seconds=p.uptime(), db_ok=db_ok, version='dashboard-v2'), 200 if db_ok else 503
++
++
++@api_v1.get('/overview')
++def get_overview():
++    return jsonify(overview(providers()))
++
++
++@api_v1.get('/devices')
++def devices():
++    return jsonify(devices=list_devices(providers()))
++
++
++@api_v1.get('/devices/<node_id>')
++def device(node_id):
++    return jsonify(get_device(providers(), node_id))
++
++
++@api_v1.get('/events')
++def events():
++    return jsonify(list_events(providers(), request.args))
++
++
++@api_v1.get('/events/summary')
++def summary():
++    return jsonify(event_summary(providers(), request.args.get('range', '24h'), request.args.get('bucket', 'hour')))
++
++
++@api_v1.get('/rfid/cards')
++def cards():
++    return jsonify(cards=list_cards(providers()))
++
++
++def body():
++    # Limit actual reads too, including requests without Content-Length.
++    raw = request.stream.read(16385)
++    if len(raw) > 16384:
++        raise ServiceError('request_too_large', 'Card requests are limited to 16 KiB.', 413)
++    try:
++        return current_app.json.loads(raw)
++    except (ValueError, UnicodeDecodeError):
++        raise ServiceError('invalid_body', 'Request must contain valid JSON.', 400) from None
++
++
++@api_v1.post('/rfid/cards')
++def add_card():
++    return jsonify(create_card(providers(), body())), 201
++
++
++@api_v1.patch('/rfid/cards/<card_uid>')
++def edit_card(card_uid):
++    return jsonify(patch_card(providers(), card_uid, body()))
++
++
++@api_v1.get('/rfid/activity')
++def activity():
++    return jsonify(events=list_events(providers(), {'sensor': 'rfid_auth', 'limit': request.args.get('limit', 50)})['events'])
++
++
++@api_v1.get('/entry-monitor/stats')
++def entry():
++    return jsonify(entry_stats(providers(), request.args.get('range', '24h')))
++
++
++@api_v1.get('/system')
++def system():
++    return jsonify(system_status(providers()))
++
++
++@api_v1.route('/<path:unknown>', methods=['GET', 'POST', 'PATCH', 'DELETE', 'PUT'])
++def unknown_route(unknown):
++    raise ServiceError('not_found', 'API endpoint not found.', 404)
+diff --git a/hub/app.py b/hub/app.py
+index d2a510a..58d80b5 100644
+--- a/hub/app.py
++++ b/hub/app.py
+@@ -31,6 +31,7 @@ from flask import Flask, jsonify
+ 
+ from config import config
+ from routes.dashboard import dashboard_bp
++from api.v1 import api_v1
+ 
+ logging.basicConfig(
+     level=logging.INFO,
+@@ -40,6 +41,7 @@ logger = logging.getLogger(__name__)
+ 
+ app = Flask(__name__)
+ app.register_blueprint(dashboard_bp)
++app.register_blueprint(api_v1)
+ 
+ _module_loader: Optional[ModuleLoader] = None
+ 
+diff --git a/hub/dashboard_dev.py b/hub/dashboard_dev.py
+new file mode 100644
+index 0000000..35c486e
+--- /dev/null
++++ b/hub/dashboard_dev.py
+@@ -0,0 +1,48 @@
++"""Hardware-free dashboard API. Run from the repo root: python hub/dashboard_dev.py."""
++import os
++from pathlib import Path
++from tempfile import TemporaryDirectory
++
++from flask import Flask
++
++from api.v1 import api_v1
++from services.common import Store, integer, utcnow
++from services.providers import DatabaseEventSource, DemoAuthWindow, DemoConnectionStatus, Providers
++from tools.seed_demo_data import seed_demo_data
++
++
++def create_app(database_path=None, *, clock=utcnow, seed=True):
++    app = Flask(__name__, static_folder=None)
++    path = database_path or os.getenv('SENTINELAI_DB_PATH')
++    if path is None:
++        temporary = TemporaryDirectory(prefix='sentinelai-demo-')
++        app.extensions['demo_temp_directory'] = temporary
++        path = Path(temporary.name) / 'demo.db'
++    path = Path(path).resolve()
++    if path == (Path(__file__).resolve().parent / 'database' / 'sentinelai.db'):
++        raise ValueError('Refusing to open the committed hub database in the demo runner.')
++    if seed:
++        seed_demo_data(path, now=clock())
++    elif not path.is_file():
++        raise ValueError('An existing test database is required with seed=False.')
++    store = Store(path)
++    app.extensions['sentinel_providers'] = Providers(
++        store=store, auth=DemoAuthWindow(clock), connection=DemoConnectionStatus(clock()),
++        events=DatabaseEventSource(store), node_id=os.getenv('SENTINELAI_NODE_ID', 'hub'),
++        stale_after_seconds=integer(os.getenv('SENTINELAI_STALE_AFTER_SECONDS', '90'), 'stale_after_seconds', maximum=86400),
++        clock=clock,
++    )
++    app.config.update(DASHBOARD_USER=os.getenv('SENTINELAI_DASHBOARD_USER', 'admin'),
++                      DASHBOARD_PASSWORD=os.getenv('SENTINELAI_DASHBOARD_PASSWORD', 'dev'))
++    app.register_blueprint(api_v1)
++    return app
++
++
++if __name__ == '__main__':
++    app = create_app()
++    try:
++        app.run(host='127.0.0.1', port=5001, threaded=True, use_reloader=False)
++    finally:
++        temporary = app.extensions.get('demo_temp_directory')
++        if temporary:
++            temporary.cleanup()
+diff --git a/hub/database/queries/__init__.py b/hub/database/queries/__init__.py
+new file mode 100644
+index 0000000..2645f7e
+--- /dev/null
++++ b/hub/database/queries/__init__.py
+@@ -0,0 +1 @@
++"""Additive queries for dashboard v2; existing models remain unchanged."""
+diff --git a/hub/database/queries/events_query.py b/hub/database/queries/events_query.py
+new file mode 100644
+index 0000000..6cbcdc4
+--- /dev/null
++++ b/hub/database/queries/events_query.py
+@@ -0,0 +1,49 @@
++"""Bounded keyset pagination with bound values for every user filter."""
++from services.common import ServiceError, integer, iso, parse_time
++
++
++def filters(args):
++    clauses, params = [], []
++    for key in ('sensor', 'node_id'):
++        if args.get(key):
++            clauses.append(f'{key} = ?')
++            params.append(args[key])
++    for key in ('severity', 'status'):
++        if args.get(key):
++            values = [v.strip() for v in args[key].split(',') if v.strip()]
++            if not values or len(values) > 20:
++                raise ServiceError('invalid_parameter', f'{key} requires 1 to 20 values.')
++            clauses.append(f"{key} IN ({','.join('?' for _ in values)})")
++            params.extend(values)
++    dates = {}
++    for key, operator in (('since', '>='), ('until', '<')):
++        if args.get(key):
++            dates[key] = parse_time(args[key], key)
++            clauses.append(f'julianday(timestamp) {operator} julianday(?)')
++            params.append(iso(dates[key]))
++    if len(dates) == 2 and dates['since'] >= dates['until']:
++        raise ServiceError('invalid_parameter', 'since must be before until.')
++    if args.get('q'):
++        if len(args['q']) > 500:
++            raise ServiceError('invalid_parameter', 'q must be at most 500 characters.')
++        # instr treats percent and underscore as literal substring characters.
++        clauses.append('instr(lower(message), lower(?)) > 0')
++        params.append(args['q'])
++    return clauses, params
++
++
++def query_events(store, args):
++    limit = integer(args.get('limit', 50), 'limit')
++    clauses, params = filters(args)
++    where = ' WHERE ' + ' AND '.join(clauses) if clauses else ''
++    # Count and page share a read snapshot, even if a producer inserts concurrently.
++    with store.connection() as conn:
++        conn.execute('BEGIN')
++        total = conn.execute('SELECT COUNT(*) FROM events' + where, params).fetchone()[0]
++        if args.get('cursor') is not None:
++            clauses.append('id < ?')
++            params.append(integer(args['cursor'], 'cursor', maximum=9223372036854775807))
++        where = ' WHERE ' + ' AND '.join(clauses) if clauses else ''
++        rows = [dict(row) for row in conn.execute('SELECT * FROM events' + where + ' ORDER BY id DESC LIMIT ?', [*params, limit + 1])]
++    page = rows[:limit]
++    return {'events': page, 'next_cursor': page[-1]['id'] if len(rows) > limit else None, 'total_matching': total}
+diff --git a/hub/services/__init__.py b/hub/services/__init__.py
+new file mode 100644
+index 0000000..9e70fa1
+--- /dev/null
++++ b/hub/services/__init__.py
+@@ -0,0 +1 @@
++"""Dashboard services. No Flask or hardware imports."""
+diff --git a/hub/services/common.py b/hub/services/common.py
+new file mode 100644
+index 0000000..93369ad
+--- /dev/null
++++ b/hub/services/common.py
+@@ -0,0 +1,79 @@
++"""Shared parsing, clock and database helpers."""
++from contextlib import contextmanager
++from datetime import datetime, timezone
++from pathlib import Path
++import sqlite3
++
++
++class ServiceError(Exception):
++    def __init__(self, code, message, status=400):
++        super().__init__(message)
++        self.code, self.message, self.status = code, message, status
++
++
++def utcnow():
++    return datetime.now(timezone.utc)
++
++
++def iso(value):
++    return value.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
++
++
++def parse_time(value, name='timestamp'):
++    try:
++        parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
++        if parsed.tzinfo is None:
++            raise ValueError()
++        return parsed.astimezone(timezone.utc)
++    except (ValueError, TypeError, AttributeError):
++        raise ServiceError('invalid_parameter', f'{name} must be an ISO-8601 timestamp with timezone.') from None
++
++
++def integer(value, name, minimum=1, maximum=200):
++    try:
++        result = int(str(value))
++        if not minimum <= result <= maximum:
++            raise ValueError()
++        return result
++    except (ValueError, TypeError):
++        raise ServiceError('invalid_parameter', f'{name} must be an integer from {minimum} to {maximum}.') from None
++
++
++class Store:
++    """Per-app DB path. Connections never outlive a query/transaction.
++
++    Opening mode=rw prevents a mistyped live path creating an empty database.
++    This avoids changing the hub's process-global config during demo/tests.
++    """
++    def __init__(self, path):
++        self.path = Path(path).resolve()
++
++    @contextmanager
++    def connection(self, write=False):
++        conn = sqlite3.connect(self.path.as_uri() + '?mode=rw', uri=True, timeout=5)
++        conn.row_factory = sqlite3.Row
++        try:
++            if write:
++                conn.execute('BEGIN IMMEDIATE')
++            else:
++                conn.execute('PRAGMA query_only = ON')
++            yield conn
++            if write:
++                conn.commit()
++        except BaseException:
++            if write:
++                conn.rollback()
++            raise
++        finally:
++            conn.close()
++
++    def rows(self, sql, params=()):
++        with self.connection() as conn:
++            return [dict(row) for row in conn.execute(sql, params).fetchall()]
++
++
++def range_start(value, now):
++    from datetime import timedelta
++    if value not in ('24h', '7d'):
++        raise ServiceError('invalid_parameter', 'range must be 24h or 7d.')
++    return now - timedelta(hours=24 if value == '24h' else 168)
+diff --git a/hub/services/devices.py b/hub/services/devices.py
+new file mode 100644
+index 0000000..6cb96ca
+--- /dev/null
++++ b/hub/services/devices.py
+@@ -0,0 +1,35 @@
++import json
++from services.common import ServiceError, parse_time
++
++
++def shape_device(row, now, stale_after):
++    result = dict(row)
++    try:
++        age = max(0.0, (now - parse_time(row['last_seen'])).total_seconds()) if row['last_seen'] else None
++    except ServiceError:
++        age = None
++    result['seconds_since_seen'] = age
++    status = row['status']
++    if status == 'online' and (age is None or age > stale_after):
++        status = 'stale'
++    result['effective_status'] = status if status in ('online', 'stale', 'offline') else 'offline'
++    try:
++        capabilities = json.loads(row['capabilities'] or '[]')
++        result['capabilities'] = capabilities if isinstance(capabilities, list) else []
++    except (ValueError, TypeError):
++        result['capabilities'] = []
++    return result
++
++
++def list_devices(providers):
++    now = providers.clock()
++    return [shape_device(row, now, providers.stale_after_seconds) for row in providers.store.rows('SELECT * FROM devices ORDER BY node_id')]
++
++
++def get_device(providers, node_id):
++    rows = providers.store.rows('SELECT * FROM devices WHERE node_id = ?', (node_id,))
++    if not rows:
++        raise ServiceError('not_found', 'Device not found.', 404)
++    result = shape_device(rows[0], providers.clock(), providers.stale_after_seconds)
++    result['recent_events'] = providers.store.rows('SELECT * FROM events WHERE node_id = ? ORDER BY id DESC LIMIT 20', (node_id,))
++    return result
+diff --git a/hub/services/events.py b/hub/services/events.py
+new file mode 100644
+index 0000000..7803dce
+--- /dev/null
++++ b/hub/services/events.py
+@@ -0,0 +1,5 @@
++from database.queries.events_query import query_events
++
++
++def list_events(providers, args):
++    return query_events(providers.store, args)
+diff --git a/hub/services/overview.py b/hub/services/overview.py
+new file mode 100644
+index 0000000..d077be6
+--- /dev/null
++++ b/hub/services/overview.py
+@@ -0,0 +1,19 @@
++from datetime import timedelta
++from services.common import iso
++from services.devices import list_devices
++
++
++def overview(providers):
++    now = providers.clock()
++    devices = list_devices(providers)
++    counts = {'devices_total': len(devices)}
++    counts.update({f'devices_{status}': sum(d['effective_status'] == status for d in devices) for status in ('online', 'stale', 'offline')})
++    counts.update(providers.store.rows('''SELECT COUNT(*) AS events_24h,
++        COALESCE(SUM(severity = 'warning'), 0) AS warnings_24h,
++        COALESCE(SUM(severity = 'critical'), 0) AS critical_24h,
++        COALESCE(SUM(sensor = 'entry_monitor' AND status = 'person_confirmed'), 0) AS persons_confirmed_24h,
++        COALESCE(SUM(sensor = 'rfid_auth' AND status = 'card_denied'), 0) AS cards_denied_24h
++        FROM events WHERE julianday(timestamp) >= julianday(?) AND julianday(timestamp) < julianday(?)''', (iso(now - timedelta(hours=24)), iso(now)))[0])
++    return {'hub': {'node_id': providers.node_id, 'uptime_seconds': providers.uptime()},
++            'counts': counts, 'auth_window': providers.auth.current(),
++            'latest_events': providers.store.rows('SELECT * FROM events ORDER BY id DESC LIMIT 10')}
+diff --git a/hub/services/providers.py b/hub/services/providers.py
+new file mode 100644
+index 0000000..658c0be
+--- /dev/null
++++ b/hub/services/providers.py
+@@ -0,0 +1,90 @@
++"""Dependency-injected demo/live seams; no imports of MQTT or hub modules."""
++from dataclasses import asdict, dataclass, field
++from threading import Lock
++from typing import Callable, Protocol
++
++from services.common import Store, parse_time, utcnow
++
++
++class AuthWindowProvider(Protocol):
++    def current(self) -> dict | None: ...
++
++
++class ConnectionStatusProvider(Protocol):
++    def current(self) -> dict: ...
++
++
++class EventSource(Protocol):
++    def latest_id(self) -> int: ...
++    def after(self, last_id: int, limit: int = 200) -> list[dict]: ...
++
++
++class DemoAuthWindow:
++    def __init__(self, clock=utcnow):
++        self.clock, self._value, self._lock = clock, None, Lock()
++
++    def set(self, value):
++        with self._lock:
++            self._value = dict(value) if value else None
++
++    def current(self):
++        with self._lock:
++            if self._value and parse_time(self._value['expires_at']) > self.clock():
++                return {**self._value, 'active': True}
++            return None
++
++
++class LiveAuthWindow:
++    def __init__(self, auth_state):
++        self.auth_state = auth_state
++
++    def current(self):
++        session = self.auth_state.current()
++        if session is None:
++            return None
++        value = asdict(session)
++        return {key: value[key] for key in ('card_uid', 'card_label', 'expires_at')} | {'active': True}
++
++
++class DemoConnectionStatus:
++    def __init__(self, started_at):
++        self.started_at = started_at
++
++    def current(self):
++        return {'mqtt_connected': None, 'started_at': self.started_at}
++
++
++class LiveConnectionStatus(DemoConnectionStatus):
++    def __init__(self, started_at, is_connected: Callable[[], bool]):
++        super().__init__(started_at)
++        self.is_connected = is_connected
++
++    def current(self):
++        return {'mqtt_connected': bool(self.is_connected()), 'started_at': self.started_at}
++
++
++class DatabaseEventSource:
++    """Shared by demo and live. Synthetic writes are a separate Phase 2 service."""
++    def __init__(self, store):
++        self.store = store
++
++    def latest_id(self):
++        return self.store.rows('SELECT COALESCE(MAX(id), 0) AS id FROM events')[0]['id']
++
++    def after(self, last_id, limit=200):
++        return self.store.rows('SELECT * FROM events WHERE id > ? ORDER BY id LIMIT ?', (last_id, limit))
++
++
++@dataclass
++class Providers:
++    store: Store
++    auth: AuthWindowProvider
++    connection: ConnectionStatusProvider
++    events: EventSource
++    node_id: str = 'hub'
++    mode: str = 'demo'
++    stale_after_seconds: int = 90
++    clock: Callable = field(default=utcnow)
++
++    def uptime(self):
++        return max(0.0, (self.clock() - self.connection.current()['started_at']).total_seconds())
+diff --git a/hub/services/rfid.py b/hub/services/rfid.py
+new file mode 100644
+index 0000000..addd2a2
+--- /dev/null
++++ b/hub/services/rfid.py
+@@ -0,0 +1,69 @@
++"""Atomic card operations on the existing schema.
++
++Unlike upsert_known_card, POST must never update an existing UID. PATCH only
++updates requested fields, preserving timestamps concurrently touched by RFID.
++"""
++import re
++import sqlite3
++from services.common import ServiceError, iso
++
++
++def uid(value):
++    value = value.strip().upper() if isinstance(value, str) else ''
++    if not re.fullmatch(r'[0-9A-F]{8,20}', value):
++        raise ServiceError('invalid_uid', 'card_uid must contain 8 to 20 hexadecimal characters.')
++    return value
++
++
++def validate(data, create=False):
++    if not isinstance(data, dict):
++        raise ServiceError('invalid_body', 'A JSON object is required.')
++    allowed = {'card_uid', 'label', 'notes'} if create else {'label', 'notes', 'active'}
++    if not data or set(data) - allowed:
++        raise ServiceError('invalid_body', 'Supply only supported card fields.')
++    result = dict(data)
++    if create:
++        result['card_uid'] = uid(data.get('card_uid'))
++    if create or 'label' in data:
++        label = data.get('label')
++        if not isinstance(label, str) or not 1 <= len(label.strip()) <= 40:
++            raise ServiceError('invalid_label', 'label must contain 1 to 40 non-whitespace characters.')
++        result['label'] = label.strip()
++    if 'notes' in data and data['notes'] is not None:
++        if not isinstance(data['notes'], str) or len(data['notes']) > 2000:
++            raise ServiceError('invalid_notes', 'notes must be null or a string of at most 2000 characters.')
++    if 'active' in data and type(data['active']) is not bool:
++        raise ServiceError('invalid_active', 'active must be a JSON boolean.')
++    return result
++
++
++def shape(row):
++    return {**dict(row), 'active': bool(row['active'])}
++
++
++def list_cards(providers):
++    return [shape(row) for row in providers.store.rows('SELECT * FROM known_cards ORDER BY label, card_uid')]
++
++
++def create_card(providers, data):
++    value = validate(data, create=True)
++    try:
++        with providers.store.connection(write=True) as conn:
++            conn.execute('INSERT INTO known_cards (card_uid, label, active, notes, created_at) VALUES (?, ?, 1, ?, ?)',
++                         (value['card_uid'], value['label'], value.get('notes'), iso(providers.clock())))
++            row = conn.execute('SELECT * FROM known_cards WHERE card_uid = ?', (value['card_uid'],)).fetchone()
++    except sqlite3.IntegrityError:
++        raise ServiceError('already_exists', 'A card with this UID already exists.', 409) from None
++    return shape(row)
++
++
++def patch_card(providers, card_uid, data):
++    card_uid = uid(card_uid)
++    value = validate(data)
++    with providers.store.connection(write=True) as conn:
++        # Field names come only from the allowlist in validate().
++        result = conn.execute('UPDATE known_cards SET ' + ', '.join(f'{key} = ?' for key in value) + ' WHERE card_uid = ?', [*value.values(), card_uid])
++        if result.rowcount == 0:
++            raise ServiceError('not_found', 'Card not found.', 404)
++        row = conn.execute('SELECT * FROM known_cards WHERE card_uid = ?', (card_uid,)).fetchone()
++    return shape(row)
+diff --git a/hub/services/stats.py b/hub/services/stats.py
+new file mode 100644
+index 0000000..26884d9
+--- /dev/null
++++ b/hub/services/stats.py
+@@ -0,0 +1,58 @@
++"""UTC rolling-window aggregation with zero-filled calendar buckets."""
++from datetime import timedelta
++from services.common import ServiceError, iso, range_start
++
++
++def bounds(range_value, now, bucket):
++    start = range_start(range_value, now)
++    if bucket not in ('hour', 'day'):
++        raise ServiceError('invalid_parameter', 'bucket must be hour or day.')
++    floor = lambda value: value.replace(minute=0, second=0, microsecond=0, **({'hour': 0} if bucket == 'day' else {}))
++    step = timedelta(hours=1) if bucket == 'hour' else timedelta(days=1)
++    points, cursor = [], floor(start)
++    while cursor < now:
++        points.append(iso(cursor).replace('.000000', ''))
++        cursor += step
++    return start, points
++
++
++def series(providers, range_value, bucket, column, keys, sensor=None):
++    now = providers.clock()
++    start, points = bounds(range_value, now, bucket)
++    # column is internal and not supplied by HTTP callers.
++    if column not in ('severity', 'status'):
++        raise ValueError('Unsupported aggregation column')
++    fmt = '%Y-%m-%dT%H:00:00Z' if bucket == 'hour' else '%Y-%m-%dT00:00:00Z'
++    where = 'julianday(timestamp) >= julianday(?) AND julianday(timestamp) < julianday(?)'
++    params = [iso(start), iso(now)]
++    if sensor:
++        where += ' AND sensor = ?'
++        params.append(sensor)
++    rows = providers.store.rows(f'SELECT strftime(?, timestamp) AS t, {column} AS kind, COUNT(*) AS n FROM events WHERE {where} GROUP BY t, {column}', [fmt, *params])
++    result = {point: {'t': point, **dict.fromkeys(keys, 0)} for point in points}
++    for row in rows:
++        if row['t'] in result and row['kind'] in keys:
++            result[row['t']][row['kind']] = row['n']
++    return list(result.values()), where, params
++
++
++def event_summary(providers, range_value='24h', bucket='hour'):
++    values, where, params = series(providers, range_value, bucket, 'severity', ('info', 'warning', 'critical'))
++    sensors = providers.store.rows(f'SELECT sensor, COUNT(*) AS count FROM events WHERE {where} GROUP BY sensor ORDER BY count DESC, sensor', params)
++    return {'range': range_value, 'bucket': bucket, 'series': values, 'by_sensor': sensors}
++
++
++def entry_stats(providers, range_value='24h'):
++    bucket = 'hour' if range_value == '24h' else 'day'
++    values, where, params = series(providers, range_value, bucket, 'status', ('person_confirmed', 'motion_no_person'), 'entry_monitor')
++    aggregate = providers.store.rows(f'''SELECT
++        COALESCE(SUM(status = 'person_confirmed'), 0) AS persons_confirmed,
++        COALESCE(SUM(status = 'motion_no_person'), 0) AS motion_no_person,
++        AVG(CASE WHEN status = 'person_confirmed' THEN confidence END) AS avg_confidence_confirmed
++        FROM events WHERE {where}''', params)[0]
++    histogram = [{'bucket': f'{i / 10:.1f}-{(i + 1) / 10:.1f}', 'count': 0} for i in range(10)]
++    rows = providers.store.rows(f'''SELECT MIN(CAST(confidence * 10 AS INTEGER), 9) AS bin, COUNT(*) AS count
++        FROM events WHERE {where} AND status = 'person_confirmed' AND confidence BETWEEN 0 AND 1 GROUP BY bin''', params)
++    for row in rows:
++        histogram[row['bin']]['count'] = row['count']
++    return {'range': range_value, **aggregate, 'confidence_histogram': histogram, 'series': values}
+diff --git a/hub/services/system.py b/hub/services/system.py
+new file mode 100644
+index 0000000..6edd6cc
+--- /dev/null
++++ b/hub/services/system.py
+@@ -0,0 +1,9 @@
++def system_status(providers):
++    store = providers.store
++    counts = store.rows('''SELECT (SELECT COUNT(*) FROM events) AS events,
++        (SELECT COUNT(*) FROM devices) AS devices,
++        (SELECT COUNT(*) FROM known_cards) AS cards''')[0]
++    return {'node_id': providers.node_id, 'uptime_seconds': providers.uptime(),
++            'db': {'path_basename': store.path.name, 'size_bytes': store.path.stat().st_size, **counts},
++            'mqtt_connected': providers.connection.current()['mqtt_connected'],
++            'stale_after_seconds': providers.stale_after_seconds, 'mode': providers.mode}
+diff --git a/hub/tests/test_api_v1.py b/hub/tests/test_api_v1.py
+new file mode 100644
+index 0000000..eabcd77
+--- /dev/null
++++ b/hub/tests/test_api_v1.py
+@@ -0,0 +1,291 @@
++"""API contract and regression tests using only temporary SQLite databases."""
++import base64
++from concurrent.futures import ThreadPoolExecutor
++from datetime import datetime, timedelta, timezone
++import hashlib
++import json
++from pathlib import Path
++import subprocess
++import sys
++
++import pytest
++
++from dashboard_dev import create_app
++from services.common import iso
++from services.providers import LiveAuthWindow, LiveConnectionStatus
++from tools.seed_demo_data import seed_demo_data
++
++NOW = datetime(2026, 10, 13, 12, tzinfo=timezone.utc)
++AUTH = {'Authorization': 'Basic ' + base64.b64encode(b'admin:dev').decode()}
++
++
++@pytest.fixture
++def app(tmp_path, monkeypatch):
++    for key in ('SENTINELAI_DB_PATH', 'SENTINELAI_DASHBOARD_USER', 'SENTINELAI_DASHBOARD_PASSWORD', 'SENTINELAI_NODE_ID', 'SENTINELAI_STALE_AFTER_SECONDS'):
++        monkeypatch.delenv(key, raising=False)
++    result = create_app(tmp_path / 'test.db', clock=lambda: NOW)
++    result.config['TESTING'] = True
++    return result
++
++
++@pytest.fixture
++def client(app):
++    return app.test_client()
++
++
++@pytest.fixture
++def store(app):
++    return app.extensions['sentinel_providers'].store
++
++
++def get(client, path):
++    return client.get('/api/v1' + path, headers=AUTH)
++
++
++def insert_event(store, *, timestamp=None, sensor='entry_monitor', status='person_confirmed', severity='warning', confidence=0.9, message='Person at entry', node='hub'):
++    with store.connection(write=True) as conn:
++        return conn.execute('INSERT INTO events (timestamp, node_id, sensor, status, severity, confidence, message) VALUES (?, ?, ?, ?, ?, ?, ?)',
++                            (timestamp or iso(NOW - timedelta(seconds=1)), node, sensor, status, severity, confidence, message)).lastrowid
++
++
++def clear_events(store):
++    with store.connection(write=True) as conn:
++        conn.execute('DELETE FROM events')
++
++
++def test_auth_and_public_health(client, app):
++    assert client.get('/api/v1/health').status_code == 200
++    response = client.get('/api/v1/overview')
++    assert response.status_code == 401
++    assert response.headers['WWW-Authenticate'].startswith('Basic ')
++    assert response.json['error']['code'] == 'unauthorized'
++    assert client.get('/api/v1/overview', headers={'Authorization': 'Bearer nope'}).status_code == 401
++    assert get(client, '/overview').status_code == 200
++    app.config['DASHBOARD_PASSWORD'] = ''
++    assert get(client, '/overview').json['error']['code'] == 'auth_not_configured'
++    assert get(client, '/overview').status_code == 500
++
++
++def test_overview_counts_and_auth_expiry(client, store, app):
++    clear_events(store)
++    insert_event(store)
++    insert_event(store, sensor='rfid_auth', status='card_denied', confidence=None)
++    insert_event(store, severity='critical')
++    insert_event(store, timestamp=iso(NOW - timedelta(days=2)))
++    body = get(client, '/overview').json
++    assert body['counts'] == dict(devices_total=3, devices_online=2, devices_stale=0, devices_offline=1,
++                                  events_24h=3, warnings_24h=2, critical_24h=1, persons_confirmed_24h=2, cards_denied_24h=1)
++    assert body['auth_window'] is None
++    provider = app.extensions['sentinel_providers'].auth
++    provider.set(dict(card_uid='04A1B2C3', card_label='Dev', expires_at=iso(NOW + timedelta(seconds=30))))
++    assert get(client, '/overview').json['auth_window']['active'] is True
++    provider.clock = lambda: NOW + timedelta(seconds=30)
++    assert get(client, '/overview').json['auth_window'] is None
++
++
++def test_devices_are_read_only_and_stale_logic_is_clock_injected(client, store, app):
++    with store.connection(write=True) as conn:
++        conn.execute('UPDATE devices SET last_seen = ? WHERE node_id = ?', (iso(NOW - timedelta(seconds=91)), 'node-zero-01'))
++    devices = get(client, '/devices').json['devices']
++    assert next(d for d in devices if d['node_id'] == 'node-zero-01')['effective_status'] == 'stale'
++    detail = get(client, '/devices/hub').json
++    assert len(detail['recent_events']) == 20
++    assert all(event['node_id'] == 'hub' for event in detail['recent_events'])
++    assert get(client, '/devices/unknown').status_code == 404
++    assert store.rows("SELECT status FROM devices WHERE node_id = 'node-zero-01'")[0]['status'] == 'online'
++
++
++@pytest.mark.parametrize('timestamp, expected_age, expected_status', [(None, None, 'stale'), ('bad', None, 'stale'), ('2026-10-13T12:00:05Z', 0, 'online'), ('2026-10-13T11:58:30Z', 90, 'online')])
++def test_device_time_edges(client, store, timestamp, expected_age, expected_status):
++    with store.connection(write=True) as conn:
++        conn.execute("UPDATE devices SET last_seen = ? WHERE node_id = 'hub'", (timestamp,))
++    row = get(client, '/devices/hub').json
++    assert row['effective_status'] == expected_status
++    assert row['seconds_since_seen'] == expected_age
++
++
++def test_events_cursor_is_stable_and_counts_ignore_cursor(client, store):
++    first = get(client, '/events?limit=13').json
++    assert len(first['events']) == 13
++    insert_event(store)
++    second = get(client, f"/events?limit=13&cursor={first['next_cursor']}").json
++    assert {e['id'] for e in first['events']}.isdisjoint(e['id'] for e in second['events'])
++    assert second['total_matching'] == 801
++    last = get(client, '/events?cursor=2').json
++    assert len(last['events']) == 1 and last['next_cursor'] is None
++
++
++def test_filters_mixed_timezones_and_literal_search(client, store):
++    clear_events(store)
++    kept = insert_event(store, timestamp='2026-10-13T16:30:00+05:30', message='Test 100%_safe', severity='critical')
++    insert_event(store, timestamp='2026-10-13T11:00:00Z', sensor='rfid_auth')
++    insert_event(store, timestamp='2026-10-13T12:00:00+00:00')
++    response = client.get('/api/v1/events', headers=AUTH, query_string=dict(sensor='entry_monitor', node_id='hub', severity='critical,warning', status='person_confirmed', since='2026-10-13T11:00:00Z', until='2026-10-13T12:00:00Z', q='100%_SAFE'))
++    assert [e['id'] for e in response.json['events']] == [kept]
++    assert get(client, '/events?q=does-not-exist').json['total_matching'] == 0
++
++
++@pytest.mark.parametrize('key', ['q', 'sensor', 'node_id', 'severity', 'status'])
++def test_injection_is_inert(client, store, key):
++    response = client.get('/api/v1/events', headers=AUTH, query_string={key: "x' OR 1=1; DROP TABLE events;--"})
++    assert response.status_code == 200
++    assert response.json['events'] == []
++    assert store.rows('SELECT COUNT(*) AS n FROM events')[0]['n'] == 800
++
++
++@pytest.mark.parametrize('query', ['limit=0', 'limit=201', 'limit=no', 'cursor=-1', 'cursor=1.5', 'since=bad', 'since=2026-10-13', 'since=2026-10-14T00:00:00Z&until=2026-10-13T00:00:00Z', 'severity=,,,'])
++def test_invalid_event_filters_are_400(client, query):
++    response = get(client, '/events?' + query)
++    assert response.status_code == 400
++    assert response.json['error']['code'] == 'invalid_parameter'
++
++
++def test_summary_zero_fill_and_half_open_range(client, store):
++    clear_events(store)
++    insert_event(store, timestamp=iso(NOW - timedelta(hours=24)))
++    insert_event(store, timestamp=iso(NOW))
++    result = get(client, '/events/summary').json
++    assert len(result['series']) == 24
++    assert sum(row['warning'] for row in result['series']) == 1
++    assert result['by_sensor'] == [{'sensor': 'entry_monitor', 'count': 1}]
++    assert get(client, '/events/summary?range=7d&bucket=day').status_code == 200
++    assert get(client, '/events/summary?range=1d').status_code == 400
++    assert get(client, '/events/summary?bucket=minute').status_code == 400
++
++
++def test_empty_stats_and_histogram_boundaries(client, store):
++    clear_events(store)
++    empty = get(client, '/entry-monitor/stats').json
++    assert empty['avg_confidence_confirmed'] is None
++    assert all(row['count'] == 0 for row in empty['confidence_histogram'])
++    for confidence in (0.0, 0.5, 0.6, 0.99, 1.0):
++        insert_event(store, confidence=confidence)
++    insert_event(store, status='motion_no_person', confidence=0.2)
++    result = get(client, '/entry-monitor/stats').json
++    assert result['persons_confirmed'] == 5 and result['motion_no_person'] == 1
++    assert result['avg_confidence_confirmed'] == pytest.approx(0.618)
++    assert [row['count'] for row in result['confidence_histogram']] == [1, 0, 0, 0, 0, 1, 1, 0, 0, 2]
++    assert get(client, '/entry-monitor/stats?range=7d').status_code == 200
++
++
++def test_card_create_patch_disable_and_duplicate(client):
++    data = {'card_uid': ' abcdef12 ', 'label': ' New key ', 'notes': 'Test'}
++    response = client.post('/api/v1/rfid/cards', headers=AUTH, json=data)
++    assert response.status_code == 201
++    original = response.json
++    assert original['card_uid'] == 'ABCDEF12' and original['label'] == 'New key'
++    assert client.post('/api/v1/rfid/cards', headers=AUTH, json=data).status_code == 409
++    response = client.patch('/api/v1/rfid/cards/abcdef12', headers=AUTH, json={'active': False, 'notes': None})
++    assert response.status_code == 200 and response.json['active'] is False
++    assert response.json['label'] == 'New key'
++    assert response.json['created_at'] == original['created_at']
++    assert client.patch('/api/v1/rfid/cards/DEADBEEF', headers=AUTH, json={'active': False}).status_code == 404
++    activity = get(client, '/rfid/activity?limit=7').json['events']
++    assert len(activity) == 7 and all(e['sensor'] == 'rfid_auth' for e in activity)
++
++
++@pytest.mark.parametrize('data', [None, [], {}, {'card_uid': 'XYZ', 'label': 'Test'}, {'card_uid': 'ABCDEF12', 'label': ' '}, {'card_uid': 'ABCDEF12', 'label': 'x'*41}, {'card_uid': 'ABCDEF12', 'label': 'Key', 'active': False}, {'card_uid': 'ABCDEF12', 'label': 'Key', 'notes': 3}])
++def test_invalid_card_creation(client, data):
++    response = client.post('/api/v1/rfid/cards', headers=AUTH, data=json.dumps(data), content_type='application/json')
++    assert response.status_code == 400
++    assert set(response.json) == {'error'}
++
++
++@pytest.mark.parametrize('data', [{'active': 'false'}, {'active': 0}, {'card_uid': 'ABCDEF12'}, {'last_seen': 'bad'}, {}])
++def test_invalid_patch(client, data):
++    assert client.patch('/api/v1/rfid/cards/04A1B2C3', headers=AUTH, json=data).status_code == 400
++
++
++def test_rfid_duplicate_creation_is_atomic(app):
++    def create(_):
++        return app.test_client().post('/api/v1/rfid/cards', headers=AUTH, json={'card_uid': 'ABCDEF12', 'label': 'Concurrent'}).status_code
++    with ThreadPoolExecutor(max_workers=2) as pool:
++        assert sorted(pool.map(create, range(2))) == [201, 409]
++
++
++def test_write_security_and_error_shapes(client):
++    url = '/api/v1/rfid/cards'
++    assert client.post(url, headers={**AUTH, 'Origin': 'https://other.example'}, json={}).status_code == 403
++    assert client.post(url, headers=AUTH, data='{}').status_code == 415
++    assert client.post(url, headers=AUTH, data='{broken', content_type='application/json').status_code == 400
++    assert client.post(url, headers=AUTH, json={'notes': 'x'*17000}).status_code == 413
++    response = get(client, '/does-not-exist')
++    assert response.status_code == 404 and response.json['error']['code'] == 'not_found'
++    assert response.headers['Cache-Control'] == 'no-store'
++
++
++def test_system_has_no_path_or_secrets(client, store):
++    result = get(client, '/system')
++    assert result.json['db']['events'] == 800
++    assert result.json['db']['cards'] == 4
++    assert result.json['mode'] == 'demo' and result.json['mqtt_connected'] is None
++    assert result.json['db']['path_basename'] == 'test.db'
++    assert str(store.path.parent) not in result.get_data(as_text=True)
++    assert 'password' not in result.get_data(as_text=True).lower()
++
++
++def test_health_database_failure_is_honest(client, store, tmp_path):
++    store.path = tmp_path / 'missing.db'
++    result = get(client, '/health')
++    assert result.status_code == 503 and result.json['db_ok'] is False
++    result = get(client, '/overview')
++    assert result.status_code == 503 and result.json['error']['code'] == 'database_unavailable'
++    assert not store.path.exists()
++
++
++def test_seeding_is_repeatable_and_never_overwrites(tmp_path):
++    from services.common import Store
++    first = seed_demo_data(tmp_path / 'one.db', now=NOW)
++    second = seed_demo_data(tmp_path / 'two.db', now=NOW)
++    assert Store(first).rows('SELECT * FROM events') == Store(second).rows('SELECT * FROM events')
++    before = hashlib.sha256(first.read_bytes()).digest()
++    with pytest.raises(FileExistsError):
++        seed_demo_data(first)
++    assert hashlib.sha256(first.read_bytes()).digest() == before
++
++
++def test_demo_refuses_committed_db_without_opening_it(monkeypatch):
++    path = Path(__file__).resolve().parents[1] / 'database' / 'sentinelai.db'
++    monkeypatch.setenv('SENTINELAI_DB_PATH', str(path))
++    with pytest.raises(ValueError, match='committed hub database'):
++        create_app()
++
++
++def test_multiple_apps_do_not_share_database_or_auth(tmp_path, app):
++    second = create_app(tmp_path / 'second.db', clock=lambda: NOW)
++    clear_events(second.extensions['sentinel_providers'].store)
++    assert get(second.test_client(), '/events').json['total_matching'] == 0
++    assert get(app.test_client(), '/events').json['total_matching'] == 800
++
++
++def test_demo_import_graph_has_no_hardware(tmp_path):
++    # Fresh interpreter: old RFID tests legitimately import modules.* themselves.
++    code = """
++import sys
++from dashboard_dev import create_app
++app = create_app(sys.argv[1])
++blocked = ('core.mqtt_client', 'core.module_loader', 'modules', 'gpiozero', 'picamera2', 'paho', 'ai_edge_litert')
++assert not [name for name in sys.modules if any(name == p or name.startswith(p + '.') for p in blocked)]
++assert app.test_client().get('/api/v1/health').status_code == 200
++"""
++    result = subprocess.run([sys.executable, '-c', code, str(tmp_path / 'subprocess.db')], cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)
++    assert result.returncode == 0, result.stderr
++
++
++def test_live_providers_are_unwired_adapters():
++    from types import SimpleNamespace
++    from dataclasses import make_dataclass
++    Session = make_dataclass('Session', ['card_uid', 'card_label', 'expires_at'])
++    session = Session('04A1B2C3', 'Dev', iso(NOW))
++    provider = LiveAuthWindow(SimpleNamespace(current=lambda: session))
++    assert provider.current()['active'] is True
++    assert LiveAuthWindow(SimpleNamespace(current=lambda: None)).current() is None
++    assert LiveConnectionStatus(NOW, lambda: True).current()['mqtt_connected'] is True
++
++
++def test_event_source_tracks_ids_without_history_replay(app, store):
++    source = app.extensions['sentinel_providers'].events
++    last = source.latest_id()
++    assert source.after(last) == []
++    new_id = insert_event(store)
++    assert [e['id'] for e in source.after(last)] == [new_id]
+diff --git a/hub/tests/test_api_v1_contract.py b/hub/tests/test_api_v1_contract.py
+new file mode 100644
+index 0000000..60d3a34
+--- /dev/null
++++ b/hub/tests/test_api_v1_contract.py
+@@ -0,0 +1,81 @@
++"""Validate every Phase 1 route against the frontend-owned JSON Schema subset.
++
++No new dependency: unsupported schema keywords fail instead of being ignored.
++Phase 3 must reuse these fixtures in TypeScript runtime-guard tests.
++"""
++from datetime import datetime, timezone
++import base64
++import json
++from pathlib import Path
++
++from dashboard_dev import create_app
++
++ROOT = Path(__file__).resolve().parents[2]
++SCHEMA = json.loads((ROOT / 'dashboard-ui/src/api/schema/responses.json').read_text(encoding='utf-8'))
++AUTH = {'Authorization': 'Basic ' + base64.b64encode(b'admin:dev').decode()}
++
++
++def validate(value, schema):
++    supported = {'$ref', 'anyOf', 'const', 'enum', 'type', 'properties', 'required', 'additionalProperties', 'items'}
++    assert set(schema) <= supported, 'Unsupported schema keyword'
++    if '$ref' in schema:
++        return validate(value, SCHEMA['$defs'][schema['$ref'].split('/')[-1]])
++    if 'anyOf' in schema:
++        for branch in schema['anyOf']:
++            try:
++                validate(value, branch)
++                return
++            except AssertionError:
++                pass
++        raise AssertionError(f'No schema alternative matches {value!r}')
++    if 'enum' in schema:
++        assert value in schema['enum']
++    if 'const' in schema:
++        assert value == schema['const']
++    kind = schema.get('type')
++    if kind is None:
++        return
++    types = {'string': (str,), 'integer': (int,), 'number': (int, float), 'boolean': (bool,), 'object': (dict,), 'array': (list,), 'null': (type(None),)}
++    assert type(value) in types[kind], (value, kind)
++    if kind == 'object':
++        assert set(schema['required']) <= set(value)
++        if schema.get('additionalProperties') is False:
++            assert set(value) <= set(schema['properties'])
++        for key, item in value.items():
++            validate(item, schema['properties'][key])
++    elif kind == 'array':
++        for item in value:
++            validate(item, schema['items'])
++
++
++def test_all_phase_one_contracts(tmp_path, monkeypatch):
++    for key in ('SENTINELAI_DASHBOARD_USER', 'SENTINELAI_DASHBOARD_PASSWORD'):
++        monkeypatch.delenv(key, raising=False)
++    app = create_app(tmp_path / 'contracts.db', clock=lambda: datetime(2026, 10, 13, 12, tzinfo=timezone.utc))
++    client = app.test_client()
++    paths = {'/health':'health', '/overview':'overview', '/devices':'devices', '/devices/hub':'deviceDetail',
++             '/events':'events', '/events/summary':'summary', '/rfid/cards':'cards', '/rfid/activity':'activity',
++             '/entry-monitor/stats':'entryStats', '/system':'system'}
++    for path, name in paths.items():
++        response = client.get('/api/v1' + path, headers=AUTH)
++        assert response.status_code == 200, path
++        validate(response.json, SCHEMA['$defs'][name])
++    created = client.post('/api/v1/rfid/cards', headers=AUTH, json={'card_uid':'ABCDEF12', 'label':'Contract card'})
++    assert created.status_code == 201
++    validate(created.json, SCHEMA['$defs']['card'])
++    patched = client.patch('/api/v1/rfid/cards/ABCDEF12', headers=AUTH, json={'active':False})
++    assert patched.status_code == 200
++    validate(patched.json, SCHEMA['$defs']['card'])
++    error = client.get('/api/v1/overview')
++    assert error.status_code == 401
++    validate(error.json, SCHEMA['$defs']['error'])
++
++
++def test_validator_rejects_drift():
++    import pytest
++    with pytest.raises(AssertionError):
++        validate({'devices': 'not a list'}, SCHEMA['$defs']['devices'])
++    with pytest.raises(AssertionError):
++        validate({'devices': [], 'unexpected': True}, SCHEMA['$defs']['devices'])
++    with pytest.raises(AssertionError):
++        validate(True, {'type': 'number'})
+diff --git a/hub/tools/__init__.py b/hub/tools/__init__.py
+new file mode 100644
+index 0000000..32ffc5c
+--- /dev/null
++++ b/hub/tools/__init__.py
+@@ -0,0 +1 @@
++"""Development utilities; never imported by the hardware runtime."""
+diff --git a/hub/tools/seed_demo_data.py b/hub/tools/seed_demo_data.py
+new file mode 100644
+index 0000000..47d0d5e
+--- /dev/null
++++ b/hub/tools/seed_demo_data.py
+@@ -0,0 +1,74 @@
++"""Create a NEW demo database. Never overwrites or seeds an existing file."""
++from datetime import timedelta
++import argparse
++import json
++from pathlib import Path
++import random
++import sqlite3
++import sys
++
++if __package__ in (None, ''):
++    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++
++from database.db import _SCHEMA
++from services.common import iso, parse_time, utcnow
++
++
++def seed_demo_data(path, *, now=None, seed=2107):
++    now = now or utcnow()
++    path = Path(path).resolve()
++    protected = Path(__file__).resolve().parents[1] / 'database' / 'sentinelai.db'
++    if path == protected.resolve():
++        raise ValueError('The hub database is never a demo target.')
++    path.parent.mkdir(parents=True, exist_ok=True)
++    # Exclusive create rejects existing databases, including non-empty user data.
++    with path.open('xb'):
++        pass
++    rng = random.Random(seed)
++    conn = sqlite3.connect(path)
++    try:
++        conn.executescript(_SCHEMA)
++        devices = [
++            ('hub', 'online', iso(now - timedelta(seconds=5)), ['pir', 'camera', 'entry_monitor', 'rfid']),
++            ('node-zero-01', 'online', iso(now - timedelta(seconds=12)), ['pir']),
++            ('node-zero-02', 'offline', iso(now - timedelta(hours=3)), ['pir']),
++        ]
++        conn.executemany('INSERT INTO devices VALUES (?, ?, ?, ?)', [(a, b, c, json.dumps(d)) for a, b, c, d in devices])
++        cards = [('04A1B2C3', 'Dev', 1), ('04B2C3D4', 'Family', 1), ('04C3D4E5', 'Guest', 1), ('04D4E5F6', 'Retired key', 0)]
++        conn.executemany('INSERT INTO known_cards VALUES (?, ?, ?, ?, ?, ?)',
++                         [(uid, label, active, 'Synthetic demo card', iso(now - timedelta(days=7)), iso(now - timedelta(hours=i + 1))) for i, (uid, label, active) in enumerate(cards)])
++        events = []
++        for _ in range(800):
++            # Weighted rejection sampling keeps morning/evening busiest.
++            while True:
++                stamp = now - timedelta(seconds=rng.randint(1, 7 * 86400))
++                weight = 1 if stamp.hour in (*range(6, 10), *range(17, 23)) else 0.25
++                if rng.random() <= weight:
++                    break
++            if rng.random() < 0.7:
++                confirmed = rng.random() < 0.3
++                sensor, status = 'entry_monitor', 'person_confirmed' if confirmed else 'motion_no_person'
++                severity = 'warning' if confirmed else 'info'
++                confidence = round(rng.uniform(0.55, 0.98) if confirmed else rng.uniform(0.05, 0.45), 3)
++                node = 'hub'
++                if confirmed and rng.random() < 0.05:
++                    severity = 'critical'
++            else:
++                authorized = rng.random() < 0.85
++                sensor, status = 'rfid_auth', 'card_authorized' if authorized else 'card_denied'
++                severity, confidence, node = 'info' if authorized else 'warning', None, 'hub'
++            events.append((iso(stamp), node, sensor, status, severity, confidence, f'DEMO: {status.replace("_", " ")} at front entry'))
++        events.sort(key=lambda row: row[0])
++        conn.executemany('INSERT INTO events (timestamp, node_id, sensor, status, severity, confidence, message) VALUES (?, ?, ?, ?, ?, ?, ?)', events)
++        conn.commit()
++    finally:
++        conn.close()
++    return path
++
++
++if __name__ == '__main__':
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('path', help='New database filename (must not exist)')
++    parser.add_argument('--as-of', help='Fixed ISO timestamp for reproducible fixtures')
++    args = parser.parse_args()
++    print(seed_demo_data(args.path, now=parse_time(args.as_of) if args.as_of else None))
+diff --git a/pytest.ini b/pytest.ini
+new file mode 100644
+index 0000000..fa6c08b
+--- /dev/null
++++ b/pytest.ini
+@@ -0,0 +1,3 @@
++[pytest]
++testpaths = hub/tests node_agent/tests
++pythonpath = hub .
+-- 
+2.55.0.windows.5
+

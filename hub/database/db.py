@@ -39,7 +39,7 @@ def get_connection() -> sqlite3.Connection:
     Row factory is set to `sqlite3.Row` so callers can access columns
     by name (e.g. `row["timestamp"]`) instead of brittle index access.
     """
-    os.makedirs(os.path.dirname(config.database.path), exist_ok=True)
+    os.makedirs(os.path.dirname(os.path.abspath(config.database.path)), exist_ok=True)
     conn = sqlite3.connect(config.database.path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")

@@ -38,18 +38,27 @@ class EntryMonitorModule(BaseModule):
 
     def __init__(self, mqtt_client) -> None:
         self._mqtt_client = mqtt_client
-        self._pir = PIRSensor(sensor_id=SENSOR_ID, pin=config.gpio.pir_pin)
-        self._camera = FrameCapture(resolution=config.vision.capture_resolution)
-        self._detector = PersonDetector()
+        self._pir = None
+        self._camera = None
+        self._detector = None
 
     def start(self) -> None:
-        self._pir.on_change(self._on_pir_change)
+        self._detector = PersonDetector()
+        self._camera = FrameCapture(resolution=config.vision.capture_resolution)
         self._camera.start()
+        self._pir = PIRSensor(sensor_id=SENSOR_ID, pin=config.gpio.pir_pin)
+        self._pir.on_change(self._on_pir_change)
         logger.info("Entry monitor module started (PIR on GPIO %s)", config.gpio.pir_pin)
 
     def stop(self) -> None:
-        self._pir.close()
-        self._camera.stop()
+        try:
+            if self._pir is not None:
+                self._pir.close()
+                self._pir = None
+        finally:
+            if self._camera is not None:
+                self._camera.stop()
+                self._camera = None
         logger.info("Entry monitor module stopped")
 
     def _on_pir_change(self, state: str) -> None:

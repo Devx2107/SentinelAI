@@ -6,7 +6,6 @@ tests never touch the real sentinelai.db, and can run on any machine
 import dataclasses
 import os
 import sys
-import tempfile
 
 import pytest
 
@@ -16,15 +15,14 @@ import config as config_module  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
-def temp_db(monkeypatch):
+def temp_db(monkeypatch, tmp_path):
     """Point the database at a temp file for the duration of each test.
 
     Config dataclasses are frozen (deliberately, to prevent accidental
     mutation at runtime), so we swap in a new Config with an updated
     `database` section rather than mutating the existing one in place.
     """
-    tmp_path = tempfile.mktemp(suffix=".db")
-    patched_database = dataclasses.replace(config_module.config.database, path=tmp_path)
+    patched_database = dataclasses.replace(config_module.config.database, path=str(tmp_path / "events.db"))
     patched_config = dataclasses.replace(config_module.config, database=patched_database)
     monkeypatch.setattr(config_module, "config", patched_config)
     monkeypatch.setattr("database.db.config", patched_config)
@@ -33,8 +31,16 @@ def temp_db(monkeypatch):
 
     init_db()
     yield
-    if os.path.exists(tmp_path):
-        os.remove(tmp_path)
+
+
+def test_database_path_can_be_a_plain_filename(monkeypatch, tmp_path):
+    from database import db
+
+    monkeypatch.chdir(tmp_path)
+    patched = dataclasses.replace(db.config, database=dataclasses.replace(db.config.database, path="local.db"))
+    monkeypatch.setattr(db, "config", patched)
+    db.init_db()
+    assert (tmp_path / "local.db").exists()
 
 
 def test_create_and_retrieve_event():

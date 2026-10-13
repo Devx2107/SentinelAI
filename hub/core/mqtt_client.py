@@ -10,6 +10,7 @@ anything about paho-mqtt directly.
 from __future__ import annotations
 
 import logging
+from threading import RLock
 from typing import Callable, Optional
 
 import paho.mqtt.client as mqtt
@@ -30,6 +31,7 @@ class MQTTClient:
         self._client.on_connect = self._on_connect
         self._client.on_disconnect = self._on_disconnect
         self._subscriptions: dict[str, MessageCallback] = {}
+        self._subscription_lock = RLock()
 
         # LWT: if this client disconnects uncleanly, the broker will
         # publish "offline" on our behalf, retained so late subscribers
@@ -49,9 +51,18 @@ class MQTTClient:
 
     def disconnect(self) -> None:
         """Publish a clean 'offline' status and disconnect."""
-        self.publish(status_topic(config.node.node_id), "offline", retain=True)
-        self._client.loop_stop()
-        self._client.disconnect()
+        try:
+            if self._client.is_connected():
+                result = self._client.publish(
+                    status_topic(config.node.node_id), "offline", qos=1, retain=True
+                )
+                if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                    result.wait_for_publish(timeout=5)
+        finally:
+            try:
+                self._client.disconnect()
+            finally:
+                self._client.loop_stop()
 
     def publish(self, topic: str, payload: str, retain: bool = False) -> None:
         """Publish a message to a topic."""
@@ -64,9 +75,11 @@ class MQTTClient:
 
         The callback receives (topic, payload) for every matching message.
         """
-        self._subscriptions[topic] = callback
-        self._client.subscribe(topic)
-        self._client.message_callback_add(topic, self._wrap_callback(callback))
+        with self._subscription_lock:
+            self._subscriptions[topic] = callback
+            self._client.message_callback_add(topic, self._wrap_callback(callback))
+            if self._client.is_connected():
+                self._client.subscribe(topic)
 
     @staticmethod
     def _wrap_callback(callback: MessageCallback):
@@ -80,6 +93,10 @@ class MQTTClient:
 
     def _on_connect(self, _client, _userdata, _flags, rc: int) -> None:
         if rc == 0:
+            # Clean sessions lose broker-side subscriptions on disconnect.
+            with self._subscription_lock:
+                for topic in self._subscriptions:
+                    self._client.subscribe(topic)
             logger.info("Connected to MQTT broker at %s:%s", config.mqtt.broker_host, config.mqtt.broker_port)
             # Announce ourselves as online, retained so late subscribers see it.
             self.publish(status_topic(config.node.node_id), "online", retain=True)

@@ -149,6 +149,56 @@ SentinelAI/
 
 ---
 
+## Development and verification
+
+Run commands below from the repository root. Backend tests need neither a
+Raspberry Pi nor a running MQTT broker:
+
+```sh
+python -m venv .venv
+# Linux/macOS:
+source .venv/bin/activate
+# Windows PowerShell instead:
+# .\.venv\Scripts\Activate.ps1
+python -m pip install -r hub/requirements-dev.txt
+python -m pytest -q
+```
+
+The suite covers event persistence, MQTT reconnection and shutdown, module
+startup rollback, and the health endpoint. Vision tests skip when optional
+vision dependencies or model files are absent. GitHub Actions runs the
+hardware-free suite on Python 3.11 and 3.12.
+
+To run the full hub on a configured Raspberry Pi, install
+`hub/requirements.txt` in an environment with the Pi camera/GPIO system
+dependencies available. Supply a compatible quantized MobileNet-SSD TFLite
+model and matching labels using `SENTINELAI_MODEL_PATH` and
+`SENTINELAI_LABELS_PATH`. These assets are not included. Labels must match
+the model's class indices, including any background entry.
+
+```sh
+docker compose up -d
+python hub/app.py
+```
+
+`GET http://localhost:5000/api/health` reports process liveness; it does not
+certify sensor readiness or broker connectivity. The current HTTP service
+only exposes this endpoint; the dashboard remains planned.
+
+Configuration environment variables:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SENTINELAI_MQTT_HOST` | `localhost` | MQTT broker hostname |
+| `SENTINELAI_MQTT_PORT` | `1883` | MQTT broker port |
+| `SENTINELAI_NODE_ID` | `hub` | Node identity in messages |
+| `SENTINELAI_DB_PATH` | `hub/database/sentinelai.db` | SQLite file (relative paths resolve from the working directory) |
+| `SENTINELAI_MODEL_PATH` | Model directory under `hub/modules/entry_monitor/vision/` | TFLite model file |
+| `SENTINELAI_LABELS_PATH` | Same model directory | Matching labels file |
+| `SENTINELAI_CONFIDENCE_THRESHOLD` | `0.5` | Person detection threshold |
+
+---
+
 # 🤝 Contributing
 
 SentinelAI is being developed incrementally, module by module, with hardware brought online one phase at a time. Contributions, suggestions, and feature requests are welcome.

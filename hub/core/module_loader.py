@@ -14,7 +14,6 @@ from __future__ import annotations
 import logging
 
 from modules.base_module import BaseModule
-from modules.entry_monitor.module import EntryMonitorModule
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +24,8 @@ def build_modules(mqtt_client) -> list[BaseModule]:
     Add new modules here as they're built. Each one only needs to
     implement BaseModule — the loader doesn't care about internals.
     """
+    from modules.entry_monitor.module import EntryMonitorModule
+
     return [
         EntryMonitorModule(mqtt_client=mqtt_client),
         # Future: MotionMonitorModule(...), EnvironmentModule(...), RFIDAuthModule(...)
@@ -36,14 +37,23 @@ class ModuleLoader:
 
     def __init__(self, mqtt_client) -> None:
         self._modules = build_modules(mqtt_client)
+        self._started: list[BaseModule] = []
 
     def start_all(self) -> None:
         for module in self._modules:
+            if module in self._started:
+                continue
             logger.info("Starting module '%s'", module.module_id)
-            module.start()
+            self._started.append(module)
+            try:
+                module.start()
+            except Exception:
+                self.stop_all()
+                raise
 
     def stop_all(self) -> None:
-        for module in self._modules:
+        while self._started:
+            module = self._started.pop()
             logger.info("Stopping module '%s'", module.module_id)
             try:
                 module.stop()

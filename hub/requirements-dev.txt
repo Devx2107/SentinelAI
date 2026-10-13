@@ -1,0 +1,4 @@
+# Hardware-free backend development and regression tests.
+flask==3.0.3
+paho-mqtt==1.6.1
+pytest==8.2.2

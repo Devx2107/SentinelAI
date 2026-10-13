@@ -14,7 +14,6 @@ committed to the repo (see README).
 import os
 import sys
 
-import numpy as np
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -23,6 +22,7 @@ from config import config  # noqa: E402
 
 pytest.importorskip("ai_edge_litert")
 pytest.importorskip("cv2")
+np = pytest.importorskip("numpy")
 
 _MODEL_MISSING = not os.path.exists(config.vision.model_path)
 _LABELS_MISSING = not os.path.exists(config.vision.labels_path)
