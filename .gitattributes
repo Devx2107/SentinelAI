@@ -1,0 +1,6 @@
+# Runtime databases are never part of source/deployment archives.
+hub/database/sentinelai.db export-ignore
+
+# Keep frontend builds consistent across Windows and Linux checkouts.
+dashboard-ui/** text eol=lf
+hub/static/dashboard/** text eol=lf

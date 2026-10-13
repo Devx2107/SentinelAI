@@ -2,3 +2,5 @@
 flask==3.0.3
 paho-mqtt==1.6.1
 pytest==8.2.2
+# Required by the camera-wrapper unit tests; no Pi libraries are imported.
+numpy==1.26.4

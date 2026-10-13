@@ -221,3 +221,10 @@ __marimo__/
 # not committed -- these binaries don't belong in git history.
 hub/modules/entry_monitor/vision/models/*.tflite
 hub/modules/entry_monitor/vision/models/*.txt
+
+# Local isolated checkouts, generated delivery archives, and runtime data.
+.worktrees/
+patches/dashboard-v2-complete/
+hub/database/*.db
+hub/database/*.db-*
+.test-tmp/

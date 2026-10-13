@@ -30,6 +30,15 @@ CREATE TABLE IF NOT EXISTS devices (
     last_seen TEXT,
     capabilities TEXT
 );
+
+CREATE TABLE IF NOT EXISTS known_cards (
+    card_uid TEXT PRIMARY KEY,
+    label TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    notes TEXT,
+    created_at TEXT NOT NULL,
+    last_seen TEXT
+);
 """
 
 

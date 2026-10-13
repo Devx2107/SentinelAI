@@ -30,6 +30,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from flask import Flask, jsonify
 
 from config import config
+from routes.dashboard import dashboard_bp
+from api.v1 import api_v1
 from core.device_registry import DeviceRegistry
 from core.module_loader import ModuleLoader
 from core.mqtt_client import get_mqtt_client
@@ -42,6 +44,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+app.register_blueprint(dashboard_bp)
+app.register_blueprint(api_v1)
 
 _module_loader: Optional[ModuleLoader] = None
 

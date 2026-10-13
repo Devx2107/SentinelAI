@@ -73,12 +73,13 @@ def test_failed_module_start_rolls_back_in_reverse_order(monkeypatch):
     calls = Mock()
     calls.attach_mock(first, "first")
     calls.attach_mock(failing, "failing")
-    monkeypatch.setattr(module_loader, "build_modules", lambda _: [first, failing, untouched])
+    monkeypatch.setattr(module_loader, "build_modules", lambda *args: [first, failing, untouched])
     loader = module_loader.ModuleLoader(Mock())
     with pytest.raises(RuntimeError, match="camera unavailable"):
         loader.start_all()
     assert calls.mock_calls == [call.first.start(), call.failing.start(), call.failing.stop(), call.first.stop()]
     untouched.start.assert_not_called()
+    untouched.stop.assert_called_once()  # Constructors may already own hardware.
     loader.stop_all()
     first.stop.assert_called_once()
 
@@ -86,7 +87,7 @@ def test_failed_module_start_rolls_back_in_reverse_order(monkeypatch):
 def test_module_cleanup_continues_after_stop_error(monkeypatch):
     first, second = Mock(module_id="first"), Mock(module_id="second")
     second.stop.side_effect = RuntimeError("cleanup failed")
-    monkeypatch.setattr(module_loader, "build_modules", lambda _: [first, second])
+    monkeypatch.setattr(module_loader, "build_modules", lambda *args: [first, second])
     loader = module_loader.ModuleLoader(Mock())
     loader.start_all()
     loader.start_all()
