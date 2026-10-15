@@ -44,5 +44,5 @@ class DemoGenerator:
 
     def stop(self):
         self.stop_event.set()
-        if self.thread:
+        if self.thread and self.thread.ident is not None:
             self.thread.join(timeout=6)

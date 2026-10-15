@@ -95,14 +95,16 @@ export function State({
   retry,
   empty,
   children,
+  hasData = false,
 }: {
   loading: boolean;
   error: string;
   retry: () => void;
   empty?: boolean;
   children: ReactNode;
+  hasData?: boolean;
 }) {
-  if (error)
+  if (error && !hasData)
     return (
       <div className="state" role="alert">
         <strong>Couldn’t load this view</strong>
@@ -118,7 +120,7 @@ export function State({
         <span />
       </div>
     );
-  if (empty)
+  if (empty && !error)
     return (
       <div className="state">
         <Icon name="events" size={30} />
@@ -126,7 +128,18 @@ export function State({
         <p>New activity will appear here when it’s recorded.</p>
       </div>
     );
-  return <>{children}</>;
+  return (
+    <>
+      {error && hasData && (
+        <div className="connection-notice" role="alert">
+          <strong>Couldn’t refresh. Showing last loaded data.</strong>
+          <p>{error}</p>
+          <button onClick={retry}>Try again</button>
+        </div>
+      )}
+      {children}
+    </>
+  );
 }
 export function Time({ value }: { value: string | null }) {
   const now = useNow();

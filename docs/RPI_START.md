@@ -88,10 +88,22 @@ RC522 scans remain to be verified on your device.
 ```
 
 `--check` reports software prerequisites without initializing GPIO/camera.
+It also validates HTTP/MQTT ports, host/node identity, device-staleness and
+authorization windows, confidence threshold, SPI settings and reader-factory
+syntax. Invalid values appear as failed checks before services open.
 It must exit 0 before live startup. The launch then waits for the MQTT broker
 acknowledgment, initializes the reader, camera and detector, and serves the
 dashboard. Startup fails with a useful message when mandatory hardware
 initialization fails; opened services are cleaned up.
+
+The dashboard detects a stream that stops sending data for 45 seconds,
+reconnects with the last validated event ID, and switches to 10-second polling
+after repeated failures. A connection notice explains when displayed data may
+be stale. Loaded views remain visible with a stale-data warning if a background
+refresh fails. Changing filters clears data from the previous query.
+Normal API requests time out after 15 seconds. Writes are never
+automatically retried; if an edit times out, refresh to check its result before
+trying again. System readiness refreshes with live updates or fallback polling.
 
 Open `http://<pi-ip>:5000/app/` from your phone or laptop and sign in with
 your configured credentials. Inspect System readiness, trigger PIR and tap a

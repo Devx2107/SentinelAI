@@ -55,6 +55,7 @@ export function OverviewPage({ revision }: Live) {
       <State
         loading={!d && overview.loading}
         error={overview.error}
+        hasData={!!overview.data}
         retry={overview.reload}
       >
         {d && (
@@ -119,6 +120,7 @@ export function OverviewPage({ revision }: Live) {
                 <State
                   loading={!summary.data && summary.loading}
                   error={summary.error}
+                  hasData={!!summary.data}
                   retry={summary.reload}
                 >
                   {summary.data && (
@@ -138,6 +140,7 @@ export function OverviewPage({ revision }: Live) {
                 <State
                   loading={!devices.data && devices.loading}
                   error={devices.error}
+                  hasData={!!devices.data}
                   retry={devices.reload}
                   empty={devices.data?.devices.length === 0}
                 >
@@ -395,6 +398,7 @@ export function EventsPageView({ revision, events: incoming, status }: Live) {
         <State
           loading={result.loading && !result.data}
           error={result.error}
+          hasData={!!result.data}
           retry={result.reload}
           empty={!rows.length}
         >
@@ -457,6 +461,7 @@ export function DevicesPage({ revision }: Live) {
       <State
         loading={!q.data && q.loading}
         error={q.error}
+        hasData={!!q.data}
         retry={q.reload}
         empty={!q.data?.devices.length}
       >
@@ -492,7 +497,12 @@ export function DeviceDetail({ revision }: Live) {
         title={id || "Device"}
         description="Connection status, capabilities, and recent activity."
       />
-      <State loading={!q.data && q.loading} error={q.error} retry={q.reload}>
+      <State
+        loading={!q.data && q.loading}
+        error={q.error}
+        hasData={!!q.data}
+        retry={q.reload}
+      >
         {q.data && (
           <>
             <div className="detail-summary">
@@ -600,6 +610,7 @@ export function AccessPage({ revision }: Live) {
         <State
           loading={!cards.data && cards.loading}
           error={cards.error}
+          hasData={!!cards.data}
           retry={cards.reload}
           empty={!cards.data?.cards.length}
         >
@@ -658,6 +669,7 @@ export function AccessPage({ revision }: Live) {
         <State
           loading={!activity.data && activity.loading}
           error={activity.error}
+          hasData={!!activity.data}
           retry={activity.reload}
           empty={!activity.data?.events.length}
         >
@@ -835,7 +847,12 @@ export function EntryPage({ revision }: Live) {
           ))}
         </div>
       </div>
-      <State loading={!q.data && q.loading} error={q.error} retry={q.reload}>
+      <State
+        loading={!q.data && q.loading}
+        error={q.error}
+        hasData={!!q.data}
+        retry={q.reload}
+      >
         {q.data && (
           <>
             <div className="stats-grid three">
@@ -896,7 +913,12 @@ export function SystemPage({ revision }: Live) {
         title="System health"
         description="Know what is running, connected, and ready."
       />
-      <State loading={!q.data && q.loading} error={q.error} retry={q.reload}>
+      <State
+        loading={!q.data && q.loading}
+        error={q.error}
+        hasData={!!q.data}
+        retry={q.reload}
+      >
         {q.data && (
           <>
             <div className="status-banner">
@@ -973,7 +995,7 @@ export function SystemPage({ revision }: Live) {
                 </div>
               </dl>
             </Panel>
-            <Readiness />
+            <Readiness revision={revision} />
             <BackupPanel mode={q.data.mode} />
           </>
         )}
@@ -981,13 +1003,18 @@ export function SystemPage({ revision }: Live) {
     </>
   );
 }
-function Readiness() {
+function Readiness({ revision }: Pick<Live, "revision">) {
   const q = useQuery<{
     checks: { name: string; ok: boolean; detail: string }[];
-  }>("/readiness");
+  }>("/readiness", revision);
   return (
     <Panel title="Startup readiness">
-      <State loading={q.loading} error={q.error} retry={q.reload}>
+      <State
+        loading={!q.data && q.loading}
+        error={q.error}
+        hasData={!!q.data}
+        retry={q.reload}
+      >
         <dl className="settings-list">
           {q.data?.checks.map((c) => (
             <div key={c.name}>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { api, authHeaders } from "./api/client";
 import { validateContract } from "./api/contracts";
 import type { EventRecord } from "./api/types";
@@ -7,13 +7,20 @@ export function useQuery<T>(path: string, refresh = 0) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
+  const previousPath = useRef(path);
   const reload = useCallback(() => setRevision((v) => v + 1), []);
   useEffect(() => {
     const abort = new AbortController();
+    if (previousPath.current !== path) {
+      setData(undefined);
+      previousPath.current = path;
+    }
     setLoading(true);
     setError("");
     api<T>(path, { signal: abort.signal })
-      .then(setData)
+      .then((value) => {
+        if (!abort.signal.aborted) setData(value);
+      })
       .catch((e) => {
         if (!abort.signal.aborted) setError(e.message);
       })
@@ -47,8 +54,16 @@ export function useStream(enabled: boolean) {
       poll: ReturnType<typeof setInterval> | undefined,
       last = "",
       failures = 0;
-    const controller = new AbortController();
+    let controller: AbortController;
+    let watchdog: ReturnType<typeof setTimeout> | undefined;
     const connect = async () => {
+      controller = new AbortController();
+      const attempt = controller;
+      const watch = () => {
+        clearTimeout(watchdog);
+        watchdog = setTimeout(() => attempt.abort(), 45000);
+      };
+      watch();
       let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
       try {
         const res = await fetch("/api/v1/stream", {
@@ -56,27 +71,25 @@ export function useStream(enabled: boolean) {
             ...authHeaders(),
             ...(last ? { "Last-Event-ID": last } : {}),
           },
-          signal: controller.signal,
+          signal: attempt.signal,
         });
         if (res.status === 401) {
           window.dispatchEvent(new Event("sentinel-unauthorized"));
           return;
         }
         if (!res.ok || !res.body) throw new Error("Disconnected");
-        setStatus("live");
-        if (poll) {
-          clearInterval(poll);
-          poll = undefined;
-        }
         let buffer = "";
         reader = res.body.getReader();
         const decoder = new TextDecoder();
-        while (!stopped) {
+        while (!stopped && !attempt.signal.aborted) {
           const part = await reader.read();
+          if (stopped || attempt.signal.aborted) break;
           if (part.done) throw new Error("Disconnected");
           buffer += decoder
             .decode(part.value, { stream: true })
             .replaceAll("\r", "");
+          if (buffer.length > 262144)
+            throw new Error("Stream packet too large");
           let end;
           while ((end = buffer.indexOf("\n\n")) >= 0) {
             const block = buffer.slice(0, end);
@@ -89,20 +102,31 @@ export function useStream(enabled: boolean) {
               if (line.startsWith("data:")) data += line.slice(5).trim();
               if (line.startsWith("id:")) id = line.slice(3).trim();
             }
-            if (id) last = id;
             if (data) {
-              failures = 0;
               const parsed = JSON.parse(data);
+              if (!["event", "device", "auth_window", "ping"].includes(kind))
+                continue;
+              if (kind === "device" && !validateContract(parsed, "device"))
+                throw new Error("Invalid device payload");
               if (kind === "event") {
                 if (!validateContract(parsed, "event"))
                   throw new Error("Invalid event payload");
                 setEvents((old) => [parsed, ...old].slice(0, 200));
                 if (parsed.severity === "critical") setCritical(parsed.message);
               }
+              if (id) last = id;
+              failures = 0;
+              watch();
+              setStatus("live");
+              if (poll) {
+                clearInterval(poll);
+                poll = undefined;
+              }
               if (kind !== "ping") setRevision((v) => v + 1);
             }
           }
         }
+        if (!stopped) throw new Error("Disconnected");
       } catch {
         if (stopped) return;
         failures++;
@@ -114,6 +138,8 @@ export function useStream(enabled: boolean) {
           Math.min(30000, 1000 * 2 ** Math.min(failures - 1, 5)),
         );
       } finally {
+        clearTimeout(watchdog);
+        attempt.abort();
         if (reader) {
           try {
             await reader.cancel();
@@ -127,7 +153,8 @@ export function useStream(enabled: boolean) {
     connect();
     return () => {
       stopped = true;
-      controller.abort();
+      controller?.abort();
+      clearTimeout(watchdog);
       clearTimeout(timer);
       if (poll) clearInterval(poll);
     };

@@ -20,7 +20,12 @@ export function InsightsPanel({ revision }: { revision: number }) {
       title="Security insights"
       aside={<span className="muted">Signals to follow up</span>}
     >
-      <State loading={!q.data && q.loading} error={q.error} retry={q.reload}>
+      <State
+        loading={!q.data && q.loading}
+        error={q.error}
+        hasData={!!q.data}
+        retry={q.reload}
+      >
         {q.data && (
           <>
             <div className="insight-metrics">

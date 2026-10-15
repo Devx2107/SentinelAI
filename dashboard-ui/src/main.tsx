@@ -196,7 +196,11 @@ function App() {
             </strong>
           </div>
           <div className="topbar-right">
-            <span className={"stream-state " + stream.status}>
+            <span
+              className={"stream-state " + stream.status}
+              role="status"
+              aria-live="polite"
+            >
               <i />
               {stream.status === "live"
                 ? "Live connection"
@@ -220,6 +224,14 @@ function App() {
           </div>
         </header>
         <main id="main" tabIndex={-1}>
+          {stream.status !== "live" && stream.status !== "connecting" && (
+            <p className="connection-notice">
+              <strong>Live updates interrupted.</strong>{" "}
+              {stream.status === "polling"
+                ? "Checking for fresh data every 10 seconds while reconnecting."
+                : "Reconnecting to your hub. Displayed data may be out of date."}
+            </p>
+          )}
           <Routes>
             <Route path="/" element={<OverviewPage {...stream} />} />
             <Route path="/events" element={<EventsPageView {...stream} />} />

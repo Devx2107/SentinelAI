@@ -49,6 +49,36 @@ describe("dashboard states", () => {
     );
     expect(screen.getByText("Nothing here yet")).toBeTruthy();
   });
+  it("keeps cached data visible when background refresh fails", () => {
+    const retry = vi.fn();
+    const mounted = vi.fn();
+    function CachedView() {
+      React.useEffect(mounted, []);
+      return <p>Last recorded activity</p>;
+    }
+    const { rerender } = render(
+      <State loading={false} error="" retry={retry} hasData>
+        <CachedView />
+      </State>,
+    );
+    rerender(
+      <State loading={false} error="Hub offline" retry={retry} hasData>
+        <CachedView />
+      </State>,
+    );
+    expect(screen.getByText("Last recorded activity")).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Showing last loaded data",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(retry).toHaveBeenCalledOnce();
+    rerender(
+      <State loading={false} error="" retry={retry} hasData>
+        <CachedView />
+      </State>,
+    );
+    expect(mounted).toHaveBeenCalledOnce();
+  });
   it("expires authorization without refetching", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-10-13T12:00:00Z"));
