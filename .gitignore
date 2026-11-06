@@ -224,7 +224,11 @@ hub/modules/entry_monitor/vision/models/*.txt
 
 # Local isolated checkouts, generated delivery archives, and runtime data.
 .worktrees/
-patches/dashboard-v2-complete/
+patches/
 hub/database/*.db
 hub/database/*.db-*
 .test-tmp/
+
+# Mosquitto broker volumes created by `docker compose up` (runtime state/logs).
+mosquitto/data/
+mosquitto/log/
