@@ -11,7 +11,10 @@ from __future__ import annotations
 
 import logging
 import threading
+<<<<<<< HEAD
 from datetime import datetime, timezone
+=======
+>>>>>>> fe2d4f2254e823ea079bf77250df6abd44ffb03e
 from typing import Optional
 
 from database.db import db_cursor
@@ -38,7 +41,10 @@ class TelegramAlertsModule(BaseModule):
         self._sender = sender
         self._policy = policy
         self._cursor: Optional[int] = None
+<<<<<<< HEAD
         self._started_at: Optional[str] = None
+=======
+>>>>>>> fe2d4f2254e823ea079bf77250df6abd44ffb03e
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
 
@@ -64,10 +70,14 @@ class TelegramAlertsModule(BaseModule):
                 logger.error("Telegram alerts disabled: %s", exc)
                 return
 
+<<<<<<< HEAD
         # Baseline now so only events written after startup can alert. The start
         # time is kept so a baseline that could not be read yet can be rebuilt
         # later without skipping events written in the meantime.
         self._started_at = datetime.now(timezone.utc).isoformat()
+=======
+        # Baseline now so only events written after startup can alert.
+>>>>>>> fe2d4f2254e823ea079bf77250df6abd44ffb03e
         try:
             self._cursor = self._fetch_latest_id()
         except Exception:
@@ -111,6 +121,7 @@ class TelegramAlertsModule(BaseModule):
         """Process new events once. Returns how many alerts were queued."""
         latest = self._fetch_latest_id()
         if self._cursor is None:
+<<<<<<< HEAD
             # The baseline could not be read at startup. Resume from the last
             # event written before startup so nothing logged since then is lost.
             if self._started_at is None:
@@ -118,6 +129,11 @@ class TelegramAlertsModule(BaseModule):
                 return 0
             self._cursor = self._fetch_last_id_before(self._started_at)
         elif latest < self._cursor:
+=======
+            self._cursor = latest
+            return 0
+        if latest < self._cursor:
+>>>>>>> fe2d4f2254e823ea079bf77250df6abd44ffb03e
             logger.warning("Event ids moved backwards (database replaced?); resetting the cursor")
             self._cursor = latest
             return 0
@@ -143,6 +159,7 @@ class TelegramAlertsModule(BaseModule):
             return int(cur.fetchone()["latest"])
 
     @staticmethod
+<<<<<<< HEAD
     def _fetch_last_id_before(moment: str) -> int:
         # julianday() reads both ISO-8601 and "YYYY-MM-DD HH:MM:SS" timestamps.
         with db_cursor() as cur:
@@ -153,6 +170,8 @@ class TelegramAlertsModule(BaseModule):
             return int(cur.fetchone()["last"])
 
     @staticmethod
+=======
+>>>>>>> fe2d4f2254e823ea079bf77250df6abd44ffb03e
     def _fetch_after(after_id: int, limit: int) -> list[Event]:
         with db_cursor() as cur:
             cur.execute(

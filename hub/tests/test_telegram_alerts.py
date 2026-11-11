@@ -265,6 +265,7 @@ def test_polling_survives_errors_and_recovers(monkeypatch):
         module.stop()
 
 
+<<<<<<< HEAD
 def test_events_written_while_the_database_was_unreadable_at_startup_still_alert(monkeypatch):
     # History from before startup, in every timestamp format seen in the table.
     create_event(make_event("critical", message="old iso", timestamp="2000-01-01T00:00:00+00:00"))
@@ -293,6 +294,8 @@ def test_events_written_while_the_database_was_unreadable_at_startup_still_alert
     assert not any("old" in message for message in sender.messages)
 
 
+=======
+>>>>>>> fe2d4f2254e823ea079bf77250df6abd44ffb03e
 def test_start_and_stop_are_idempotent_and_clean_up_threads():
     module, sender = make_module()
     module.start()
