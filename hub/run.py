@@ -37,6 +37,7 @@ def preflight():
         ('STALE_AFTER_SECONDS', '90', 1, 86400),
         ('RFID_SPI_PORT', '0', 0, 1), ('RFID_SPI_DEVICE', '0', 0, 2),
         ('RFID_RESET_PIN', '25', 0, 27),
+        ('TELEGRAM_MAX_PER_MINUTE', '20', 1, 120),
     ):
         try:
             value = int(os.getenv('SENTINELAI_' + name, default))
@@ -47,6 +48,8 @@ def preflight():
     for name, default, minimum, maximum in (
         ('CONFIDENCE_THRESHOLD', '0.5', 0, 1),
         ('RFID_AUTH_WINDOW_SECONDS', '30', .1, 86400),
+        ('TELEGRAM_COOLDOWN_SECONDS', '60', 0, 86400),
+        ('TELEGRAM_POLL_SECONDS', '2', .5, 60),
     ):
         try:
             value = float(os.getenv('SENTINELAI_' + name, default))
@@ -62,6 +65,13 @@ def preflight():
         add(name.lower(), valid, 'Use a non-empty host or a node ID containing letters, digits, underscores and hyphens.')
     factory = os.getenv('SENTINELAI_RFID_READER_FACTORY', '')
     add('rfid_reader_factory', not factory or bool(re.fullmatch(r'[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*:[A-Za-z_]\w*', factory)), 'Optional reader factory must use module.path:callable syntax.')
+    token, chat_id = os.getenv('SENTINELAI_TELEGRAM_BOT_TOKEN', ''), os.getenv('SENTINELAI_TELEGRAM_CHAT_ID', '')
+    add('telegram_credentials', bool(token) == bool(chat_id), 'Set both the Telegram bot token and chat ID, or neither.')
+    add('telegram_bot_token', not token or bool(re.fullmatch(r'\d{5,}:[A-Za-z0-9_-]{20,}', token)), 'Telegram bot token must look like 123456789:AA... with no quotes or spaces.')
+    add('telegram_chat_id', not chat_id or bool(re.fullmatch(r'-?\d+|@[A-Za-z][A-Za-z0-9_]{4,}', chat_id)), 'Telegram chat ID must be a number (negative for groups) or an @channel name.')
+    add('telegram_min_severity', os.getenv('SENTINELAI_TELEGRAM_MIN_SEVERITY', 'warning').strip().lower() in ('info', 'warning', 'critical'), 'Use info, warning or critical.')
+    if token and chat_id:
+        add('python_telegram_bot', importlib.util.find_spec('telegram') is not None, 'Required when Telegram alerts are enabled.')
     for dependency in ('flask', 'paho', 'gpiozero', 'picamera2', 'ai_edge_litert', 'cv2'):
         add(dependency, importlib.util.find_spec(dependency) is not None, 'Required live dependency.')
     for variable in ('SENTINELAI_MODEL_PATH','SENTINELAI_LABELS_PATH'):

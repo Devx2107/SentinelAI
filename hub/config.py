@@ -90,6 +90,25 @@ class RFIDConfig:
 
 
 @dataclass(frozen=True)
+class TelegramConfig:
+    """Telegram alert settings. Alerts are disabled unless token and chat ID are set."""
+
+    bot_token: str = field(default=os.getenv("SENTINELAI_TELEGRAM_BOT_TOKEN", ""), repr=False)
+    chat_id: str = os.getenv("SENTINELAI_TELEGRAM_CHAT_ID", "")
+    # Lowest severity that sends an alert: info, warning or critical.
+    min_severity: str = os.getenv("SENTINELAI_TELEGRAM_MIN_SEVERITY", "warning")
+    # Minimum seconds between alerts for the same node, sensor and status.
+    cooldown_seconds: float = float(os.getenv("SENTINELAI_TELEGRAM_COOLDOWN_SECONDS", "60"))
+    poll_seconds: float = float(os.getenv("SENTINELAI_TELEGRAM_POLL_SECONDS", "2"))
+    # Global ceiling across all alert types, protecting the chat from floods.
+    max_per_minute: int = int(os.getenv("SENTINELAI_TELEGRAM_MAX_PER_MINUTE", "20"))
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self.bot_token and self.chat_id)
+
+
+@dataclass(frozen=True)
 class Config:
     gpio: GPIOConfig = field(default_factory=GPIOConfig)
     mqtt: MQTTConfig = field(default_factory=MQTTConfig)
@@ -97,6 +116,7 @@ class Config:
     vision: VisionConfig = field(default_factory=VisionConfig)
     node: NodeConfig = field(default_factory=NodeConfig)
     rfid: RFIDConfig = field(default_factory=RFIDConfig)
+    telegram: TelegramConfig = field(default_factory=TelegramConfig)
 
 
 config = Config()
