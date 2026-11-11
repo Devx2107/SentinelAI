@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from datetime import datetime, timezone
 from typing import Optional
 
 from database.db import db_cursor
@@ -37,6 +38,7 @@ class TelegramAlertsModule(BaseModule):
         self._sender = sender
         self._policy = policy
         self._cursor: Optional[int] = None
+        self._started_at: Optional[str] = None
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
 
@@ -62,7 +64,10 @@ class TelegramAlertsModule(BaseModule):
                 logger.error("Telegram alerts disabled: %s", exc)
                 return
 
-        # Baseline now so only events written after startup can alert.
+        # Baseline now so only events written after startup can alert. The start
+        # time is kept so a baseline that could not be read yet can be rebuilt
+        # later without skipping events written in the meantime.
+        self._started_at = datetime.now(timezone.utc).isoformat()
         try:
             self._cursor = self._fetch_latest_id()
         except Exception:
@@ -106,9 +111,13 @@ class TelegramAlertsModule(BaseModule):
         """Process new events once. Returns how many alerts were queued."""
         latest = self._fetch_latest_id()
         if self._cursor is None:
-            self._cursor = latest
-            return 0
-        if latest < self._cursor:
+            # The baseline could not be read at startup. Resume from the last
+            # event written before startup so nothing logged since then is lost.
+            if self._started_at is None:
+                self._cursor = latest
+                return 0
+            self._cursor = self._fetch_last_id_before(self._started_at)
+        elif latest < self._cursor:
             logger.warning("Event ids moved backwards (database replaced?); resetting the cursor")
             self._cursor = latest
             return 0
@@ -132,6 +141,16 @@ class TelegramAlertsModule(BaseModule):
         with db_cursor() as cur:
             cur.execute("SELECT COALESCE(MAX(id), 0) AS latest FROM events")
             return int(cur.fetchone()["latest"])
+
+    @staticmethod
+    def _fetch_last_id_before(moment: str) -> int:
+        # julianday() reads both ISO-8601 and "YYYY-MM-DD HH:MM:SS" timestamps.
+        with db_cursor() as cur:
+            cur.execute(
+                "SELECT COALESCE(MAX(id), 0) AS last FROM events WHERE julianday(timestamp) < julianday(?)",
+                (moment,),
+            )
+            return int(cur.fetchone()["last"])
 
     @staticmethod
     def _fetch_after(after_id: int, limit: int) -> list[Event]:

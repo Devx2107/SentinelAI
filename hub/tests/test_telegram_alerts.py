@@ -265,6 +265,34 @@ def test_polling_survives_errors_and_recovers(monkeypatch):
         module.stop()
 
 
+def test_events_written_while_the_database_was_unreadable_at_startup_still_alert(monkeypatch):
+    # History from before startup, in every timestamp format seen in the table.
+    create_event(make_event("critical", message="old iso", timestamp="2000-01-01T00:00:00+00:00"))
+    create_event(make_event("critical", message="old micro", timestamp="2000-01-01T00:00:00.123456+00:00"))
+    create_event(make_event("critical", message="old plain", timestamp="2000-01-01 00:00:00"))
+
+    module, sender = make_module()
+    real_latest = TelegramAlertsModule._fetch_latest_id
+    outage = {"on": True}
+
+    def flaky_latest():
+        if outage["on"]:
+            raise RuntimeError("database is locked")
+        return real_latest()
+
+    monkeypatch.setattr(module, "_fetch_latest_id", flaky_latest)
+    module.start()
+    try:
+        # Logged while the module could not read the database.
+        create_event(make_event("warning", message="during outage"))
+        outage["on"] = False
+        assert wait_for(lambda: len(sender.messages) == 1)
+    finally:
+        module.stop()
+    assert "during outage" in sender.messages[0]
+    assert not any("old" in message for message in sender.messages)
+
+
 def test_start_and_stop_are_idempotent_and_clean_up_threads():
     module, sender = make_module()
     module.start()
