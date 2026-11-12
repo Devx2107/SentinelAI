@@ -129,6 +129,18 @@ edited, enabled and disabled from the dashboard's Access page. UID recognition
 is not cryptographic proof of identity. See [RPI_START.md](docs/RPI_START.md)
 for wiring.
 
+### Telegram Alerts (optional) 🚧
+
+**Status:** Implemented in software with network-free tests. Not yet verified
+against a real bot or on the Pi.
+
+The `telegram_alerts` module sends a Telegram message when an event at or above
+a configurable severity is logged (default `warning`, so a confirmed person at
+the entry or a denied RFID card). It is off unless both a bot token and chat ID
+are set, applies a per-event cooldown and a global rate cap, and masks RFID
+card UIDs. Setup, behavior and troubleshooting are in
+[docs/telegram-alerts.md](docs/telegram-alerts.md).
+
 ### Dashboard v2 ✅
 
 A React/TypeScript single-page app served by the hub at `/app/`, backed by an
@@ -145,7 +157,7 @@ commands, video, user accounts and push notifications are not implemented.
 - Environmental monitoring (DHT11 — temperature & humidity)
 - Water tank / level monitoring
 - Gas & fire detection
-- Remote monitoring (Telegram alerts, Tailscale)
+- Remote access (Tailscale)
 
 ---
 
@@ -192,7 +204,8 @@ SentinelAI/
 │   ├── modules/                    # Pluggable capabilities
 │   │   ├── base_module.py            # Interface every module implements
 │   │   ├── entry_monitor/             # PIR + camera + person detection
-│   │   └── rfid_auth/                  # RC522 adapter, simulated reader, authorization
+│   │   ├── rfid_auth/                  # RC522 adapter, simulated reader, authorization
+│   │   └── telegram_alerts/             # Optional Telegram alerts (poller, policy, sender)
 │   ├── database/                    # SQLite models and queries (events, devices, RFID cards)
 │   ├── routes/, templates/           # Dashboard v1, served at /dashboard
 │   ├── static/dashboard/              # Prebuilt dashboard v2 (committed)
@@ -224,6 +237,7 @@ SentinelAI/
 | [docs/RPI_START.md](docs/RPI_START.md) | Raspberry Pi setup, RC522 wiring, check/start commands and what still needs real hardware |
 | [docs/dashboard-v2-complete.md](docs/dashboard-v2-complete.md) | Dashboard v2 features, run and maintain, verification scope |
 | [docs/dashboard-features-2.1.md](docs/dashboard-features-2.1.md) | Security insights, saved views and database backups |
+| [docs/telegram-alerts.md](docs/telegram-alerts.md) | Telegram alert setup, configuration, behavior and troubleshooting |
 | [docs/dashboard-v2.md](docs/dashboard-v2.md) | Historical Phase 1 backend notes |
 | [docs/dashboard-v2-review.md](docs/dashboard-v2-review.md) | Historical plan review and refinements |
 
@@ -247,7 +261,7 @@ python -m pytest -q
 The suite covers event persistence, MQTT reconnection and shutdown, module
 startup rollback, the dashboard API and its contract, event streams, insights
 and backups, the launcher, RFID authorization and the RC522 protocol, entry
-monitor logic and the node agent. Vision tests skip when optional vision
+monitor logic, Telegram alerts and the node agent. Vision tests skip when optional vision
 dependencies or model files are absent. GitHub Actions workflows are
 configured to run the hardware-free backend suite on Python 3.11 and 3.12 and
 the dashboard checks (backend tests, frontend tests and a production build on
@@ -320,6 +334,12 @@ Values may be set in the shell or in a `.env` file at the repository root
 | `SENTINELAI_RFID_SPI_PORT` | `0` | SPI port for the RC522 adapter |
 | `SENTINELAI_RFID_SPI_DEVICE` | `0` | SPI chip-select device for the RC522 adapter |
 | `SENTINELAI_RFID_RESET_PIN` | `25` | RC522 reset GPIO pin |
+| `SENTINELAI_TELEGRAM_BOT_TOKEN` | Unset | Telegram bot token. Alerts need this and the chat ID; keep it out of version control |
+| `SENTINELAI_TELEGRAM_CHAT_ID` | Unset | Chat to alert: a number (negative for groups) or an `@channel` name |
+| `SENTINELAI_TELEGRAM_MIN_SEVERITY` | `warning` | Lowest severity that sends an alert: `info`, `warning` or `critical` |
+| `SENTINELAI_TELEGRAM_COOLDOWN_SECONDS` | `60` | Minimum seconds between alerts for the same node, sensor and status |
+| `SENTINELAI_TELEGRAM_MAX_PER_MINUTE` | `20` | Global ceiling on alerts per minute |
+| `SENTINELAI_TELEGRAM_POLL_SECONDS` | `2` | How often the hub checks for new events |
 | `SENTINELAI_HEARTBEAT_INTERVAL` | `10` | Node agent heartbeat interval in seconds |
 | `SENTINELAI_MQTT_CLIENT_ID` | `sentinelai-node` | Node agent MQTT client ID |
 

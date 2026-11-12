@@ -3,3 +3,5 @@
 flask==3.0.3
 paho-mqtt==1.6.1
 ai-edge-litert
+# Optional: Telegram alerts (only used when a bot token is configured).
+python-telegram-bot==22.5

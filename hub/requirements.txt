@@ -17,5 +17,8 @@ ai-edge-litert
 numpy==1.26.4
 opencv-python-headless==4.10.0.84
 
+# --- Telegram alerts (optional; only imported when a bot token is configured) ---
+python-telegram-bot==22.5
+
 # --- Testing ---
 pytest==8.2.2

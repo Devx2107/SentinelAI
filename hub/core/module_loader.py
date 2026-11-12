@@ -39,6 +39,11 @@ def build_modules(mqtt_client, auth_state=None, reader=None) -> list[BaseModule]
 
     modules.append(RfidAuthModule(mqtt_client=mqtt_client, auth_state=auth_state, reader=reader))
 
+    if config.telegram.enabled:
+        from modules.telegram_alerts.module import TelegramAlertsModule
+
+        modules.append(TelegramAlertsModule(config.telegram))
+
     return modules
 
 
